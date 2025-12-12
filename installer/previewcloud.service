@@ -1,0 +1,22 @@
+[Unit]
+Description=PreviewCloud Preview Environment Platform
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/previewcloud
+EnvironmentFile=/etc/previewcloud/.env
+ExecStartPre=/usr/local/bin/docker-compose -f /opt/previewcloud/infra/docker-compose.yml pull
+ExecStart=/usr/local/bin/docker-compose -f /opt/previewcloud/infra/docker-compose.yml up
+ExecStop=/usr/local/bin/docker-compose -f /opt/previewcloud/infra/docker-compose.yml down
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

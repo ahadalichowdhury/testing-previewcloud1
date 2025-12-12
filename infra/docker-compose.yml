@@ -1,0 +1,156 @@
+version: "3.8"
+
+services:
+  # PreviewCloud Backend
+  previewcloud:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: previewcloud-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - MONGODB_URI=mongodb://mongodb:27017/previewcloud
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - BASE_DOMAIN=${BASE_DOMAIN:-preview.local}
+      - WILDCARD_SSL=${WILDCARD_SSL:-false}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
+      - API_TOKEN_SECRET=${API_TOKEN_SECRET}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_ADMIN_USER=postgres
+      - POSTGRES_ADMIN_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_ADMIN_USER=root
+      - MYSQL_ADMIN_PASSWORD=${MYSQL_PASSWORD:-root}
+      - MONGODB_HOST=preview-mongodb
+      - MONGODB_PORT=27017
+      - TRAEFIK_NETWORK=traefik-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./backend/logs:/app/logs
+    networks:
+      - previewcloud
+      - traefik-proxy
+    depends_on:
+      - mongodb
+      - postgres
+      - mysql
+      - preview-mongodb
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.previewcloud.rule=Host(`${API_DOMAIN:-api.preview.local}`)"
+      - "traefik.http.routers.previewcloud.entrypoints=websecure"
+      - "traefik.http.routers.previewcloud.tls=true"
+      - "traefik.http.routers.previewcloud.tls.certresolver=letsencrypt"
+      - "traefik.http.services.previewcloud.loadbalancer.server.port=3001"
+
+  # MongoDB for PreviewCloud metadata
+  mongodb:
+    image: mongo:7
+    container_name: previewcloud-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=previewcloud
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - previewcloud
+
+  # PostgreSQL for preview databases
+  postgres:
+    image: postgres:16
+    container_name: previewcloud-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - previewcloud
+
+  # MySQL for preview databases
+  mysql:
+    image: mysql:8
+    container_name: previewcloud-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD:-root}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - previewcloud
+
+  # MongoDB for preview databases
+  preview-mongodb:
+    image: mongo:7
+    container_name: previewcloud-preview-mongodb
+    restart: unless-stopped
+    ports:
+      - "27018:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD:-admin}
+    volumes:
+      - preview-mongodb-data:/data/db
+    networks:
+      - previewcloud
+
+  # Traefik Reverse Proxy
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik-proxy"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@example.com}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certs:/letsencrypt
+    networks:
+      - traefik-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`${TRAEFIK_DOMAIN:-traefik.preview.local}`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+networks:
+  previewcloud:
+    driver: bridge
+  traefik-proxy:
+    external: true
+
+volumes:
+  mongodb-data:
+  postgres-data:
+  mysql-data:
+  preview-mongodb-data:
+  traefik-certs:

@@ -1,0 +1,52 @@
+# PreviewCloud Configuration Example
+# Place this file as preview.yaml in your repository root
+
+# Services configuration (required)
+# Each service will be deployed as a separate container
+services:
+  # API service example
+  api:
+    dockerfile: ./api/Dockerfile      # Path to Dockerfile (required)
+    port: 8080                         # Port the service listens on (optional)
+    env:                               # Environment variables specific to this service
+      NODE_ENV: preview
+      LOG_LEVEL: debug
+    context: ./api                     # Build context directory (optional, defaults to dockerfile directory)
+    buildArgs:                         # Docker build arguments (optional)
+      NODE_VERSION: "20"
+
+  # Frontend/Web service example
+  web:
+    dockerfile: ./frontend/Dockerfile
+    port: 3000
+    env:
+      # Use the preview URL of other services
+      NEXT_PUBLIC_API_URL: https://pr-{PR_NUMBER}-{OWNER}.api.{BASE_DOMAIN}
+      NEXT_PUBLIC_ENV: preview
+
+  # Worker service example (no port needed for background workers)
+  worker:
+    dockerfile: ./worker/Dockerfile
+    context: ./worker
+    env:
+      WORKER_CONCURRENCY: "5"
+
+# Database configuration (optional)
+# If specified, a dedicated database will be created for this preview
+database:
+  type: postgres           # Options: postgres, mysql, mongodb
+  migrations: ./migrations # Path to migrations folder (optional)
+
+# Global environment variables (optional)
+# Available to all services
+env:
+  APP_NAME: MyApp Preview
+  FEATURE_FLAGS: new-ui,experimental
+  CACHE_TTL: "3600"
+
+# Password protection (optional)
+# If set, all preview URLs will require authentication
+# Username: preview
+# Password: <value below>
+password: my-secure-preview-password
+
