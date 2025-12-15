@@ -344,6 +344,10 @@ const options: swaggerJsdoc.Options = {
         description: "System health check endpoints",
       },
       {
+        name: "Authentication",
+        description: "User authentication and account management",
+      },
+      {
         name: "Previews",
         description: "Preview environment management",
       },
