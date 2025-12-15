@@ -138,7 +138,7 @@ services:
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
       - "traefik.http.services.api.loadbalancer.server.port=3001"
       # Apply middlewares
-      - "traefik.http.routers.api.middlewares=secure-headers,rate-limit,compress"
+      - "traefik.http.routers.api.middlewares=secure-headers@file,rate-limit@file,compress@file"
     depends_on:
       - mongodb-platform
       - postgres
