@@ -119,8 +119,12 @@ echo ""
 
 cd "$SCRIPT_DIR/backend"
 
-# Check if .env exists
-if [ ! -f .env ]; then
+# Use .env.local for local development
+if [ -f .env.local ]; then
+    echo -e "${BLUE}📝 Using .env.local for local development${NC}"
+    cp .env.local .env
+    echo -e "${GREEN}✅ Loaded local environment${NC}"
+elif [ ! -f .env ]; then
     echo -e "${YELLOW}⚠️  No .env file found in backend/. Copying from .env.example...${NC}"
     if [ -f .env.example ]; then
         cp .env.example .env

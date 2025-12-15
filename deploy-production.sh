@@ -133,6 +133,13 @@ echo ""
 
 cd "$SCRIPT_DIR/backend"
 
+# Use .env.production for production deployment
+if [ -f .env.production ]; then
+    echo -e "${BLUE}📝 Using .env.production for production deployment${NC}"
+    cp .env.production .env
+    echo -e "${GREEN}✅ Loaded production environment${NC}"
+fi
+
 echo -e "${BLUE}📦 Installing dependencies...${NC}"
 npm ci --production=false
 echo -e "${GREEN}✅ Dependencies installed${NC}"
