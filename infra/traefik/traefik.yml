@@ -3,7 +3,7 @@
 # API and Dashboard
 api:
   dashboard: true
-  insecure: false  # Disable insecure access
+  insecure: true  # Enable for debugging
 
 # Entry Points
 entryPoints:
@@ -44,7 +44,7 @@ providers:
 
 # Logging
 log:
-  level: INFO
+  level: DEBUG
   filePath: /var/log/traefik/traefik.log
 
 accessLog:
