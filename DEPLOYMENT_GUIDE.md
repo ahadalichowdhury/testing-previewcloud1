@@ -22,6 +22,7 @@
 ## 🎯 Prerequisites
 
 ### What You Need:
+
 - ✅ Domain: `previewcloud.cloud` (registered with Hostinger)
 - ✅ AWS Account
 - ✅ Credit card for AWS
@@ -29,6 +30,7 @@
 - ✅ Time: ~2-3 hours for initial setup
 
 ### Costs (Estimated):
+
 - EC2 instance: $40-100/month (t3.large or t3.xlarge)
 - Domain: $10/year (already have)
 - Total: ~$50-100/month initially
@@ -80,6 +82,7 @@ TTL: 3600
 ```
 
 **Result after DNS propagation (24-48 hours):**
+
 - `previewcloud.cloud` → Landing page
 - `api.previewcloud.cloud` → Backend API
 - `dashboard.previewcloud.cloud` → User dashboard
@@ -114,20 +117,24 @@ dig test.preview.previewcloud.cloud
 **Name:** `previewcloud-production`
 
 **AMI (Operating System):**
+
 - Ubuntu Server 22.04 LTS (Free tier eligible)
 - 64-bit (x86)
 
 **Instance Type:**
 
 For initial launch (small scale):
+
 - `t3.large` - 2 vCPU, 8 GB RAM - $60/month
 - Good for 5-10 concurrent preview environments
 
 For growth (medium scale):
+
 - `t3.xlarge` - 4 vCPU, 16 GB RAM - $120/month
 - Good for 20-50 concurrent preview environments
 
 **Key Pair:**
+
 - Create new: `previewcloud-production`
 - Download `.pem` file
 - Save to: `~/.ssh/previewcloud-production.pem`
@@ -138,6 +145,7 @@ For growth (medium scale):
 Security Group: Create new `previewcloud-sg`
 
 Inbound Rules:
+
 ```
 SSH (22)        - Your IP only        - For management
 HTTP (80)       - 0.0.0.0/0          - For web traffic
@@ -146,12 +154,14 @@ Custom TCP      - 0.0.0.0/0          - Port 8080 (Traefik dashboard)
 ```
 
 **Storage:**
+
 - Root volume: 100 GB gp3 SSD (or more based on expected usage)
 - Delete on termination: No (keep data if instance fails)
 
 **Advanced Details:**
 
 User data (runs on first boot):
+
 ```bash
 #!/bin/bash
 apt-get update
@@ -166,6 +176,7 @@ apt-get upgrade -y
 4. Update Hostinger DNS with this IP
 
 **Connect via SSH:**
+
 ```bash
 # Save IP to variable
 export EC2_IP=54.123.45.67
@@ -385,6 +396,7 @@ CLEANUP_IDLE_THRESHOLD_HOURS=48
 ```
 
 **Generate secure secrets:**
+
 ```bash
 # Generate JWT secret
 echo "JWT_SECRET=$(openssl rand -base64 32)"
@@ -429,7 +441,7 @@ cd infra/traefik
 # API and Dashboard
 api:
   dashboard: true
-  insecure: false  # Disable insecure access
+  insecure: false # Disable insecure access
 
 # Entry Points
 entryPoints:
@@ -441,7 +453,7 @@ entryPoints:
           to: websecure
           scheme: https
           permanent: true
-  
+
   websecure:
     address: ":443"
     http:
@@ -452,7 +464,7 @@ entryPoints:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: admin@previewcloud.cloud  # Your email
+      email: admin@previewcloud.cloud # Your email
       storage: /letsencrypt/acme.json
       httpChallenge:
         entryPoint: web
@@ -463,7 +475,7 @@ providers:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
     network: previewcloud
-  
+
   file:
     filename: /etc/traefik/dynamic.yml
     watch: true
@@ -492,7 +504,7 @@ http:
         stsSeconds: 31536000
         stsIncludeSubdomains: true
         stsPreload: true
-    
+
     rate-limit:
       rateLimit:
         average: 100
@@ -515,7 +527,7 @@ tls:
 **File: `/opt/previewcloud/infra/docker-compose.yml`**
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   # Traefik Reverse Proxy
@@ -526,7 +538,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
-      - "8080:8080"  # Dashboard (secure with auth)
+      - "8080:8080" # Dashboard (secure with auth)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
@@ -734,31 +746,31 @@ CMD ["node", "dist/index.js"]
 Add to `infra/docker-compose.yml`:
 
 ```yaml
-  # PreviewCloud API
-  previewcloud-api:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile.prod
-    container_name: previewcloud-api
-    restart: unless-stopped
-    env_file:
-      - ../backend/.env
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - preview-builds:/tmp/builds
-    networks:
-      - previewcloud
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.api.rule=Host(`api.previewcloud.cloud`)"
-      - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.api.loadbalancer.server.port=3001"
-    depends_on:
-      - mongodb-platform
-      - postgres
-      - mysql
-      - redis
+# PreviewCloud API
+previewcloud-api:
+  build:
+    context: ../backend
+    dockerfile: Dockerfile.prod
+  container_name: previewcloud-api
+  restart: unless-stopped
+  env_file:
+    - ../backend/.env
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - preview-builds:/tmp/builds
+  networks:
+    - previewcloud
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.api.rule=Host(`api.previewcloud.cloud`)"
+    - "traefik.http.routers.api.entrypoints=websecure"
+    - "traefik.http.routers.api.tls.certresolver=letsencrypt"
+    - "traefik.http.services.api.loadbalancer.server.port=3001"
+  depends_on:
+    - mongodb-platform
+    - postgres
+    - mysql
+    - redis
 ```
 
 Rebuild and restart:
@@ -784,37 +796,37 @@ cd /opt/previewcloud/infra
 ```
 
 ```yaml
-  # Grafana (Monitoring UI)
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
-    volumes:
-      - grafana-data:/var/lib/grafana
-    networks:
-      - previewcloud
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.grafana.rule=Host(`monitoring.previewcloud.cloud`)"
-      - "traefik.http.routers.grafana.entrypoints=websecure"
-      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+# Grafana (Monitoring UI)
+grafana:
+  image: grafana/grafana:latest
+  container_name: grafana
+  restart: unless-stopped
+  ports:
+    - "3000:3000"
+  environment:
+    GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
+  volumes:
+    - grafana-data:/var/lib/grafana
+  networks:
+    - previewcloud
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.grafana.rule=Host(`monitoring.previewcloud.cloud`)"
+    - "traefik.http.routers.grafana.entrypoints=websecure"
+    - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
 
-  # Prometheus (Metrics)
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: prometheus
-    restart: unless-stopped
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus-data:/prometheus
-    networks:
-      - previewcloud
+# Prometheus (Metrics)
+prometheus:
+  image: prom/prometheus:latest
+  container_name: prometheus
+  restart: unless-stopped
+  command:
+    - "--config.file=/etc/prometheus/prometheus.yml"
+  volumes:
+    - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    - prometheus-data:/prometheus
+  networks:
+    - previewcloud
 ```
 
 ### Backup Strategy
@@ -931,6 +943,7 @@ docker system df
 ### Common Issues
 
 **1. SSL Certificate Issues:**
+
 ```bash
 # Check Traefik logs
 docker logs traefik | grep -i "certificate"
@@ -940,11 +953,13 @@ dig api.previewcloud.cloud
 ```
 
 **2. Docker Socket Permission:**
+
 ```bash
 sudo chmod 666 /var/run/docker.sock
 ```
 
 **3. Port Already in Use:**
+
 ```bash
 # Check what's using port
 sudo lsof -i :80
@@ -978,4 +993,3 @@ sudo lsof -i :443
 - API: https://api.previewcloud.cloud
 - Dashboard: https://dashboard.previewcloud.cloud (once frontend deployed)
 - Monitoring: https://monitoring.previewcloud.cloud
-

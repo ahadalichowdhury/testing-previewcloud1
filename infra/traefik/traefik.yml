@@ -1,12 +1,11 @@
+# Traefik Production Configuration for PreviewCloud
+
+# API and Dashboard
 api:
   dashboard: true
-  insecure: false
+  insecure: false  # Disable insecure access
 
-log:
-  level: INFO
-
-accessLog: {}
-
+# Entry Points
 entryPoints:
   web:
     address: ":80"
@@ -16,25 +15,37 @@ entryPoints:
           to: websecure
           scheme: https
           permanent: true
-
+  
   websecure:
     address: ":443"
     http:
       tls:
         certResolver: letsencrypt
 
-providers:
-  docker:
-    endpoint: "unix:///var/run/docker.sock"
-    exposedByDefault: false
-    network: traefik-proxy
-    watch: true
-
+# Certificate Resolver (Let's Encrypt)
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: admin@previewcloud.cloud
+      email: admin@previewcloud.cloud  # Change to your email
       storage: /letsencrypt/acme.json
       httpChallenge:
         entryPoint: web
 
+# Providers
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: previewcloud
+  
+  file:
+    filename: /etc/traefik/dynamic.yml
+    watch: true
+
+# Logging
+log:
+  level: INFO
+  filePath: /var/log/traefik/traefik.log
+
+accessLog:
+  filePath: /var/log/traefik/access.log

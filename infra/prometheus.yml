@@ -1,0 +1,36 @@
+# Prometheus Configuration for PreviewCloud
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: "previewcloud"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # PreviewCloud API
+  - job_name: "previewcloud-api"
+    static_configs:
+      - targets: ["previewcloud-api:3001"]
+    metrics_path: "/metrics"
+
+  # Docker containers
+  - job_name: "docker"
+    static_configs:
+      - targets: ["host.docker.internal:9323"]
+
+  # Node exporter (if installed)
+  - job_name: "node"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # Traefik metrics
+  - job_name: "traefik"
+    static_configs:
+      - targets: ["traefik:8080"]
+    metrics_path: "/metrics"
