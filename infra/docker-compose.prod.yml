@@ -5,7 +5,7 @@ version: "3.8"
 services:
   # Traefik Reverse Proxy
   traefik:
-    image: traefik:v3.2
+    image: traefik:v3.0
     container_name: traefik
     restart: unless-stopped
     ports:
@@ -132,20 +132,13 @@ services:
       - previewcloud
     labels:
       - "traefik.enable=true"
-      # API routing - HTTP (for ACME challenge)
-      - "traefik.http.routers.api-http.rule=Host(`api.previewcloud.cloud`)"
-      - "traefik.http.routers.api-http.entrypoints=web"
-      - "traefik.http.routers.api-http.middlewares=redirect-to-https"
-      # API routing - HTTPS
+      # API routing
       - "traefik.http.routers.api.rule=Host(`api.previewcloud.cloud`)"
       - "traefik.http.routers.api.entrypoints=websecure"
       - "traefik.http.routers.api.tls.certresolver=letsencrypt"
       - "traefik.http.services.api.loadbalancer.server.port=3001"
       # Apply middlewares
       - "traefik.http.routers.api.middlewares=secure-headers,rate-limit,compress"
-      # Redirect middleware
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
     depends_on:
       - mongodb-platform
       - postgres
@@ -175,11 +168,6 @@ services:
       - previewcloud
     labels:
       - "traefik.enable=true"
-      # Grafana HTTP (for ACME challenge)
-      - "traefik.http.routers.grafana-http.rule=Host(`monitoring.previewcloud.cloud`)"
-      - "traefik.http.routers.grafana-http.entrypoints=web"
-      - "traefik.http.routers.grafana-http.middlewares=redirect-to-https"
-      # Grafana HTTPS
       - "traefik.http.routers.grafana.rule=Host(`monitoring.previewcloud.cloud`)"
       - "traefik.http.routers.grafana.entrypoints=websecure"
       - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
