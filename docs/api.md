@@ -5,7 +5,7 @@ Complete API documentation for the PreviewCloud platform.
 ## Base URL
 
 ```
-https://api.preview.previewcloud.cloud
+https://api.previewcloud.cloud
 ```
 
 ## Authentication
@@ -14,7 +14,7 @@ All authenticated endpoints require a Bearer token:
 
 ```bash
 curl -H "Authorization: Bearer YOUR_API_TOKEN" \
-  https://api.preview.previewcloud.cloud/api/previews
+  https://api.previewcloud.cloud/api/previews
 ```
 
 ### Generating an API Token
@@ -152,7 +152,7 @@ List all preview environments.
 **Example:**
 
 ```bash
-curl "https://api.preview.previewcloud.cloud/api/previews?status=running&repoOwner=myuser"
+curl "https://api.previewcloud.cloud/api/previews?status=running&repoOwner=myuser"
 ```
 
 **Response (200 OK):**
@@ -174,7 +174,7 @@ curl "https://api.preview.previewcloud.cloud/api/previews?status=running&repoOwn
           "containerId": "container123",
           "imageTag": "previewcloud/pr-123-api:abc123",
           "port": 8080,
-          "url": "https://pr-123-github-user.api.preview.previewcloud.cloud",
+          "url": "https://pr-123-github-user.api.previewcloud.cloud",
           "status": "running"
         }
       ],
@@ -183,7 +183,7 @@ curl "https://api.preview.previewcloud.cloud/api/previews?status=running&repoOwn
         "connectionString": "postgresql://..."
       },
       "urls": {
-        "api": "https://pr-123-github-user.api.preview.previewcloud.cloud",
+        "api": "https://pr-123-github-user.api.previewcloud.cloud",
         "web": "https://pr-123-github-user.web.preview.previewcloud.cloud"
       },
       "createdAt": "2024-01-15T10:30:00.000Z",
@@ -210,7 +210,7 @@ Get details for a specific preview.
 **Example:**
 
 ```bash
-curl https://api.preview.previewcloud.cloud/api/previews/123
+curl https://api.previewcloud.cloud/api/previews/123
 ```
 
 **Response (200 OK):**
@@ -265,7 +265,7 @@ Destroy a preview environment.
 ```bash
 curl -X DELETE \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
-  https://api.preview.previewcloud.cloud/api/previews/123
+  https://api.previewcloud.cloud/api/previews/123
 ```
 
 **Response (200 OK):**
@@ -300,7 +300,7 @@ Get logs for a preview environment.
 **Example:**
 
 ```bash
-curl "https://api.preview.previewcloud.cloud/api/previews/123/logs?type=build&limit=50"
+curl "https://api.previewcloud.cloud/api/previews/123/logs?type=build&limit=50"
 ```
 
 **Response (200 OK):**
@@ -322,7 +322,7 @@ curl "https://api.preview.previewcloud.cloud/api/previews/123/logs?type=build&li
       "previewId": "preview123",
       "prNumber": 123,
       "type": "deploy",
-      "message": "Service api deployed: https://pr-123-user.api.preview.previewcloud.cloud",
+      "message": "Service api deployed: https://pr-123-user.api.previewcloud.cloud",
       "createdAt": "2024-01-15T10:35:00.000Z"
     }
   ],
@@ -350,7 +350,7 @@ Get paginated logs for a preview.
 **Example:**
 
 ```bash
-curl "https://api.preview.previewcloud.cloud/api/previews/123/logs/paginated?page=1&pageSize=50"
+curl "https://api.previewcloud.cloud/api/previews/123/logs/paginated?page=1&pageSize=50"
 ```
 
 **Response (200 OK):**
@@ -379,7 +379,7 @@ Get log statistics for a preview.
 **Example:**
 
 ```bash
-curl https://api.preview.previewcloud.cloud/api/previews/123/logs/stats
+curl https://api.previewcloud.cloud/api/previews/123/logs/stats
 ```
 
 **Response (200 OK):**
@@ -409,7 +409,7 @@ Stream real-time logs via WebSocket.
 
 ```javascript
 const ws = new WebSocket(
-  "ws://api.preview.previewcloud.cloud/api/previews/123/logs/stream"
+  "ws://api.previewcloud.cloud/api/previews/123/logs/stream"
 );
 
 ws.onmessage = (event) => {

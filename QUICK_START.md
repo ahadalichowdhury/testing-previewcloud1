@@ -3,6 +3,7 @@
 ## 🎯 What You'll Get
 
 After 5 minutes, you'll have:
+
 - ✅ Automatic preview environments for every PR
 - ✅ Unique URLs for each preview
 - ✅ Isolated databases
@@ -15,7 +16,8 @@ After 5 minutes, you'll have:
 ### Step 1: Get Token from Your Admin (30 seconds)
 
 Ask your admin for:
-- API URL: `https://api.preview.previewcloud.cloud`
+
+- API URL: `https://api.previewcloud.cloud`
 - API Token: `eyJhbGciOiJIUzI1NiIs...`
 
 ### Step 2: Add GitHub Action (2 minutes)
@@ -36,10 +38,11 @@ jobs:
       - uses: previewcloud/action@v1
         with:
           api-token: ${{ secrets.PREVIEWCLOUD_TOKEN }}
-          api-url: https://api.preview.previewcloud.cloud
+          api-url: https://api.previewcloud.cloud
 ```
 
 Add the token as a GitHub Secret:
+
 1. Go to: **Settings** → **Secrets** → **Actions**
 2. Click **New repository secret**
 3. Name: `PREVIEWCLOUD_TOKEN`
@@ -110,15 +113,16 @@ git push origin feature/new-api
 ## 🆘 Common Issues
 
 **Preview not deploying?**
+
 - Check GitHub Actions logs
 - Verify `preview.yaml` exists
 - Check Dockerfile paths
 
 **Can't access preview URL?**
+
 - Wait 2-3 minutes for deployment
 - Check preview logs: `/api/previews/{prNumber}/logs`
 
 ---
 
 That's it! 🚀 You now have automatic preview environments!
-

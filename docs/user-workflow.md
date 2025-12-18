@@ -156,7 +156,7 @@ git push origin feature/user-authentication
   • Web: https://pr-42-myrepo.web.preview.previewcloud.cloud
 
 📊 Database: PostgreSQL
-📝 Logs: https://api.preview.previewcloud.cloud/api/previews/42/logs
+📝 Logs: https://api.previewcloud.cloud/api/previews/42/logs
 
 ✅ Status: Running
 ⏱️ Deployed: 2 minutes ago

@@ -8,7 +8,7 @@ PreviewCloud provides a RESTful API for managing preview environments. All endpo
 
 ```
 Development: http://localhost:3001
-Production: https://api.preview.previewcloud.cloud
+Production: https://api.previewcloud.cloud
 ```
 
 ### Interactive API Documentation
@@ -17,7 +17,7 @@ Access the interactive Swagger/OpenAPI documentation:
 
 ```
 http://localhost:3001/api/docs
-https://api.preview.previewcloud.cloud/api/docs
+https://api.previewcloud.cloud/api/docs
 ```
 
 ## Authentication
@@ -37,7 +37,7 @@ Most write operations require authentication using a Bearer token.
 ### Example Request with Authentication
 
 ```bash
-curl -X POST https://api.preview.previewcloud.cloud/api/previews \
+curl -X POST https://api.previewcloud.cloud/api/previews \
   -H "Authorization: Bearer YOUR_API_TOKEN" \
   -H "Content-Type: application/json" \
   -d @preview-config.json
@@ -121,7 +121,7 @@ Create or update a preview environment.
     "services": [
       {
         "name": "api",
-        "url": "https://pr-123-user.api.preview.previewcloud.cloud",
+        "url": "https://pr-123-user.api.previewcloud.cloud",
         "status": "running"
       },
       {
@@ -135,7 +135,7 @@ Create or update a preview environment.
       "connectionString": "postgresql://user:pass@host:5432/pr_123_db"
     },
     "urls": {
-      "api": "https://pr-123-user.api.preview.previewcloud.cloud",
+      "api": "https://pr-123-user.api.previewcloud.cloud",
       "web": "https://pr-123-user.web.preview.previewcloud.cloud"
     },
     "createdAt": "2024-01-15T10:00:00.000Z",
@@ -165,7 +165,7 @@ List all preview environments.
       "repoOwner": "github-user",
       "status": "running",
       "urls": {
-        "api": "https://pr-123-user.api.preview.previewcloud.cloud"
+        "api": "https://pr-123-user.api.previewcloud.cloud"
       },
       "createdAt": "2024-01-15T10:00:00.000Z"
     }
@@ -197,7 +197,7 @@ Get details of a specific preview.
         "containerId": "abc123",
         "imageTag": "previewcloud/pr-123-api:latest",
         "port": 8080,
-        "url": "https://pr-123-user.api.preview.previewcloud.cloud",
+        "url": "https://pr-123-user.api.previewcloud.cloud",
         "status": "running"
       }
     ],
@@ -206,7 +206,7 @@ Get details of a specific preview.
       "connectionString": "postgresql://user:pass@host:5432/pr_123_db"
     },
     "urls": {
-      "api": "https://pr-123-user.api.preview.previewcloud.cloud"
+      "api": "https://pr-123-user.api.previewcloud.cloud"
     },
     "createdAt": "2024-01-15T10:00:00.000Z",
     "updatedAt": "2024-01-15T10:30:00.000Z",
@@ -503,7 +503,7 @@ The complete OpenAPI 3.0 specification is available at:
 
 ```
 http://localhost:3001/api/docs/json
-https://api.preview.previewcloud.cloud/api/docs/json
+https://api.previewcloud.cloud/api/docs/json
 ```
 
 You can import this specification into tools like:

@@ -161,7 +161,7 @@ configure_environment() {
     
     # Prompt for domain
     read -p "Enter your base domain (e.g., preview.previewcloud.cloud): " BASE_DOMAIN
-    read -p "Enter your API domain (e.g., api.preview.previewcloud.cloud): " API_DOMAIN
+    read -p "Enter your API domain (e.g., api.previewcloud.cloud): " API_DOMAIN
     read -p "Enter your Traefik domain (e.g., traefik.preview.previewcloud.cloud): " TRAEFIK_DOMAIN
     read -p "Enter your email for Let's Encrypt: " ACME_EMAIL
     

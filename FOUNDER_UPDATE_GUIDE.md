@@ -20,6 +20,7 @@ cd /opt/previewcloud
 ```
 
 **That's it!** The script will:
+
 1. ✅ Pull latest code from Git
 2. ✅ Pull latest Docker images
 3. ✅ Rebuild backend
@@ -57,12 +58,14 @@ npm run build
 ### Step 4: Restart Services
 
 **If using Docker Compose:**
+
 ```bash
 cd ../infra
 docker compose up -d --build
 ```
 
 **If using PM2:**
+
 ```bash
 pm2 restart previewcloud-api
 # Or if not running:
@@ -88,6 +91,7 @@ curl http://localhost:3001/api/health
 ## 🎯 Complete Workflow Example
 
 **On your local machine:**
+
 ```bash
 # Make changes to code
 vim backend/src/services/preview.service.ts
@@ -99,6 +103,7 @@ git push origin main
 ```
 
 **On your server:**
+
 ```bash
 # SSH to server
 ssh -i ~/.ssh/previewcloud-production.pem ubuntu@YOUR_SERVER_IP
@@ -115,6 +120,7 @@ cd /opt/previewcloud
 ## 📊 Check Status
 
 ### View Logs
+
 ```bash
 # Backend logs (PM2)
 pm2 logs previewcloud-api
@@ -127,6 +133,7 @@ docker logs previewcloud-api
 ```
 
 ### Check Services
+
 ```bash
 # All Docker containers
 docker ps
@@ -140,6 +147,7 @@ df -h
 ```
 
 ### Test API
+
 ```bash
 # Local
 curl http://localhost:3001/api/health
@@ -155,6 +163,7 @@ curl https://api.previewcloud.cloud/api/health
 ### Update Failed?
 
 **1. Check Git Status:**
+
 ```bash
 cd /opt/previewcloud
 git status
@@ -162,18 +171,21 @@ git pull origin main
 ```
 
 **2. Check Docker:**
+
 ```bash
 docker ps
 docker compose -f infra/docker-compose.yml ps
 ```
 
 **3. Check PM2:**
+
 ```bash
 pm2 status
 pm2 logs previewcloud-api --lines 50
 ```
 
 **4. Rebuild from Scratch:**
+
 ```bash
 cd /opt/previewcloud/backend
 rm -rf node_modules dist
@@ -185,6 +197,7 @@ pm2 restart previewcloud-api
 ### Services Not Starting?
 
 **Check logs:**
+
 ```bash
 # PM2 logs
 pm2 logs previewcloud-api --err
@@ -194,6 +207,7 @@ docker compose -f infra/docker-compose.yml logs previewcloud-api
 ```
 
 **Restart everything:**
+
 ```bash
 cd /opt/previewcloud/infra
 docker compose down
@@ -241,4 +255,3 @@ crontab -e
 4. Done! ✅
 
 **That's it!** Your PreviewCloud is updated! 🚀
-

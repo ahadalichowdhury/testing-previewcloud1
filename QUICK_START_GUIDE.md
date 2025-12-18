@@ -6,7 +6,7 @@
 
 Ask your admin for:
 
-- API URL: `https://api.preview.previewcloud.cloud`
+- API URL: `https://api.previewcloud.cloud`
 - API Token: `eyJhbGciOiJIUzI1NiIs...`
 
 ### 2️⃣ Add GitHub Secret (1 minute)
@@ -37,7 +37,7 @@ jobs:
       - uses: previewcloud/action@v1
         with:
           api-token: ${{ secrets.PREVIEWCLOUD_TOKEN }}
-          api-url: https://api.preview.previewcloud.cloud
+          api-url: https://api.previewcloud.cloud
 ```
 
 ### 4️⃣ Create preview.yaml (2 minutes)
@@ -110,5 +110,5 @@ database:
 ## Need Help?
 
 - Full Guide: See `USER_GUIDE.md`
-- API Docs: `https://api.preview.previewcloud.cloud/api/docs`
+- API Docs: `https://api.previewcloud.cloud/api/docs`
 - Contact your admin

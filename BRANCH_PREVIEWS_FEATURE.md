@@ -45,7 +45,7 @@ jobs:
         uses: previewcloud/action@v1
         with:
           api-token: ${{ secrets.PREVIEWCLOUD_TOKEN }}
-          api-url: https://api.preview.previewcloud.cloud
+          api-url: https://api.previewcloud.cloud
 ```
 
 ### How It Works
@@ -180,7 +180,7 @@ jobs:
       - uses: previewcloud/action@v1
         with:
           api-token: ${{ secrets.PREVIEWCLOUD_TOKEN }}
-          api-url: https://api.preview.previewcloud.cloud
+          api-url: https://api.previewcloud.cloud
 ```
 
 **Result:** Every push to `main` updates the preview at:
@@ -204,7 +204,7 @@ jobs:
       - uses: previewcloud/action@v1
         with:
           api-token: ${{ secrets.PREVIEWCLOUD_TOKEN }}
-          api-url: https://api.preview.previewcloud.cloud
+          api-url: https://api.previewcloud.cloud
 ```
 
 **Result:**

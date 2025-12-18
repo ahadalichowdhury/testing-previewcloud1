@@ -82,7 +82,7 @@ Complete guide for deploying PreviewCloud on your infrastructure.
 - [ ] Have access to DNS management
 - [ ] Plan subdomain structure:
   - `preview.previewcloud.cloud` (base)
-  - `api.preview.previewcloud.cloud` (API)
+  - `api.previewcloud.cloud` (API)
   - `traefik.preview.previewcloud.cloud` (Traefik dashboard)
 
 ### 2. Server Access
@@ -183,7 +183,7 @@ GITHUB_WEBHOOK_SECRET=$(openssl rand -hex 32)
 # Create .env file
 sudo tee /etc/previewcloud/.env <<EOF
 BASE_DOMAIN=preview.previewcloud.cloud
-API_DOMAIN=api.preview.previewcloud.cloud
+API_DOMAIN=api.previewcloud.cloud
 TRAEFIK_DOMAIN=traefik.preview.previewcloud.cloud
 WILDCARD_SSL=true
 ACME_EMAIL=admin@previewcloud.cloud
@@ -220,7 +220,7 @@ You need to configure DNS records to point to your server.
 ```
 Type    Name                            Value
 A       *.preview.previewcloud.cloud       YOUR_SERVER_IP
-A       api.preview.previewcloud.cloud     YOUR_SERVER_IP
+A       api.previewcloud.cloud     YOUR_SERVER_IP
 A       traefik.preview.previewcloud.cloud YOUR_SERVER_IP
 ```
 
@@ -273,13 +273,13 @@ aws route53 change-resource-record-sets --hosted-zone-id YOUR_ZONE_ID --change-b
 
 ```bash
 # Check wildcard DNS
-dig pr-123-test.api.preview.previewcloud.cloud
+dig pr-123-test.api.previewcloud.cloud
 
 # Check specific subdomain
-dig api.preview.previewcloud.cloud
+dig api.previewcloud.cloud
 
 # Check from multiple locations
-nslookup api.preview.previewcloud.cloud 8.8.8.8
+nslookup api.previewcloud.cloud 8.8.8.8
 ```
 
 DNS propagation typically takes 5-60 minutes.
@@ -311,7 +311,7 @@ sudo docker exec traefik cat /letsencrypt/acme.json | jq
 sudo docker logs traefik
 
 # Test HTTPS
-curl -I https://api.preview.previewcloud.cloud/api/health
+curl -I https://api.previewcloud.cloud/api/health
 ```
 
 ### Troubleshooting SSL
@@ -326,7 +326,7 @@ curl -I https://api.preview.previewcloud.cloud/api/health
 **Solutions:**
 ```bash
 # Check DNS
-dig api.preview.previewcloud.cloud
+dig api.previewcloud.cloud
 
 # Check port accessibility
 sudo netstat -tulpn | grep :80
@@ -367,7 +367,7 @@ sudo systemctl status previewcloud
 sudo docker ps
 
 # Check API health
-curl https://api.preview.previewcloud.cloud/api/health
+curl https://api.previewcloud.cloud/api/health
 ```
 
 Expected output:
@@ -394,7 +394,7 @@ Expected output:
 
 1. Go to your repository → Settings → Webhooks
 2. Add webhook:
-   - **Payload URL**: `https://api.preview.previewcloud.cloud/api/webhooks/github`
+   - **Payload URL**: `https://api.previewcloud.cloud/api/webhooks/github`
    - **Content type**: `application/json`
    - **Secret**: Use GITHUB_WEBHOOK_SECRET from installation
    - **Events**: Select "Pull requests"
@@ -420,7 +420,7 @@ jobs:
         uses: previewcloud/deploy@v1
         with:
           api-token: ${{ secrets.PREVIEWCLOUD_API_TOKEN }}
-          api-url: https://api.preview.previewcloud.cloud
+          api-url: https://api.previewcloud.cloud
 ```
 
 Add `PREVIEWCLOUD_API_TOKEN` to repository secrets.
@@ -431,7 +431,7 @@ Add `PREVIEWCLOUD_API_TOKEN` to repository secrets.
 2. Watch GitHub Action execution
 3. Check preview creation:
    ```bash
-   curl https://api.preview.previewcloud.cloud/api/previews
+   curl https://api.previewcloud.cloud/api/previews
    ```
 4. Access preview URL
 
@@ -460,7 +460,7 @@ df -h
 sudo docker stats
 
 # Check preview count
-curl https://api.preview.previewcloud.cloud/api/previews | jq '.count'
+curl https://api.previewcloud.cloud/api/previews | jq '.count'
 ```
 
 ### Backup
@@ -481,7 +481,7 @@ sudo cp -r /etc/previewcloud ./config-backup-$(date +%Y%m%d)
 sudo docker system prune -a --volumes
 
 # Remove specific preview
-curl -X DELETE https://api.preview.previewcloud.cloud/api/previews/123 \
+curl -X DELETE https://api.previewcloud.cloud/api/previews/123 \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

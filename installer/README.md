@@ -33,7 +33,7 @@ Before installation, configure your DNS:
 ```
 Type    Name                            Value
 A       *.preview.previewcloud.cloud       YOUR_SERVER_IP
-A       api.preview.previewcloud.cloud     YOUR_SERVER_IP
+A       api.previewcloud.cloud     YOUR_SERVER_IP
 A       traefik.preview.previewcloud.cloud YOUR_SERVER_IP
 ```
 
@@ -63,7 +63,7 @@ sudo ./install.sh
 The installer will ask for:
 
 - Base domain (e.g., `preview.previewcloud.cloud`)
-- API domain (e.g., `api.preview.previewcloud.cloud`)
+- API domain (e.g., `api.previewcloud.cloud`)
 - Traefik domain (e.g., `traefik.preview.previewcloud.cloud`)
 - Email for Let's Encrypt
 
@@ -83,7 +83,7 @@ The installer will generate and display:
 
 ```bash
 # Generate a token for GitHub Actions
-curl -X POST https://api.preview.previewcloud.cloud/api/auth/generate-token \
+curl -X POST https://api.previewcloud.cloud/api/auth/generate-token \
   -H "Content-Type: application/json"
 ```
 
@@ -91,7 +91,7 @@ curl -X POST https://api.preview.previewcloud.cloud/api/auth/generate-token \
 
 1. Go to your repository → Settings → Webhooks
 2. Add webhook:
-   - **Payload URL**: `https://api.preview.previewcloud.cloud/api/webhooks/github`
+   - **Payload URL**: `https://api.previewcloud.cloud/api/webhooks/github`
    - **Content type**: `application/json`
    - **Secret**: Use the webhook secret from installation
    - **Events**: Select "Pull requests"
@@ -116,7 +116,7 @@ jobs:
         uses: previewcloud/deploy@v1
         with:
           api-token: ${{ secrets.PREVIEWCLOUD_API_TOKEN }}
-          api-url: https://api.preview.previewcloud.cloud
+          api-url: https://api.previewcloud.cloud
 ```
 
 Add the API token as a secret in your repository settings.

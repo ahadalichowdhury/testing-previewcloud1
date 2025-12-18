@@ -17,7 +17,7 @@ PreviewCloud automatically creates **isolated preview environments** for your Gi
 
 Ask your admin for:
 
-- **API URL**: `https://api.preview.previewcloud.cloud` (or your custom domain)
+- **API URL**: `https://api.previewcloud.cloud` (or your custom domain)
 - **API Token**: `eyJhbGciOiJIUzI1NiIs...` (JWT token)
 
 ### Step 2: Add GitHub Action to Your Repository
@@ -42,7 +42,7 @@ jobs:
         uses: previewcloud/action@v1
         with:
           api-token: ${{ secrets.PREVIEWCLOUD_TOKEN }}
-          api-url: https://api.preview.previewcloud.cloud
+          api-url: https://api.previewcloud.cloud
 ```
 
 ### Step 3: Add Token as GitHub Secret
@@ -296,7 +296,7 @@ https://branch-{branch-name}-{owner}.{service}.{domain}
 ### Via API
 
 ```bash
-curl https://api.preview.previewcloud.cloud/api/previews/42/logs \
+curl https://api.previewcloud.cloud/api/previews/42/logs \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -304,7 +304,7 @@ curl https://api.preview.previewcloud.cloud/api/previews/42/logs \
 
 ```javascript
 const ws = new WebSocket(
-  "wss://api.preview.previewcloud.cloud/api/previews/42/logs/stream"
+  "wss://api.previewcloud.cloud/api/previews/42/logs/stream"
 );
 
 ws.onmessage = (event) => {
@@ -328,7 +328,7 @@ ws.onmessage = (event) => {
 ```bash
 # Destroy a preview
 curl -X DELETE \
-  https://api.preview.previewcloud.cloud/api/previews/42 \
+  https://api.previewcloud.cloud/api/previews/42 \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -410,11 +410,11 @@ on:
 1. **Wait 2-3 minutes** for deployment to complete
 2. **Check preview status:**
    ```bash
-   curl https://api.preview.previewcloud.cloud/api/previews/42
+   curl https://api.previewcloud.cloud/api/previews/42
    ```
 3. **Check logs** for errors:
    ```bash
-   curl https://api.preview.previewcloud.cloud/api/previews/42/logs
+   curl https://api.previewcloud.cloud/api/previews/42/logs
    ```
 
 ### Database Connection Issues?
@@ -514,7 +514,7 @@ env:
 ## 📞 Support
 
 - **Documentation**: See `docs/` folder
-- **API Docs**: `https://api.preview.previewcloud.cloud/api/docs` (Swagger UI)
+- **API Docs**: `https://api.previewcloud.cloud/api/docs` (Swagger UI)
 - **Issues**: Contact your admin or check logs
 
 ---

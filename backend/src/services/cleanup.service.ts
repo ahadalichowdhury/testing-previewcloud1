@@ -88,9 +88,10 @@ export class CleanupScheduler {
 
         for (const preview of idlePreviews) {
           try {
-            const previewLabel = preview.previewType === "pull_request" && preview.prNumber
-              ? `PR #${preview.prNumber}`
-              : preview.previewId;
+            const previewLabel =
+              preview.previewType === "pull_request" && preview.prNumber
+                ? `PR #${preview.prNumber}`
+                : preview.previewId;
             logger.info(`Cleaning up idle preview: ${previewLabel}`);
             await this.previewService.destroyPreview(preview.previewId);
           } catch (error) {
@@ -129,9 +130,10 @@ export class CleanupScheduler {
             // Delete preview document
             await Preview.deleteOne({ _id: preview._id });
 
-            const previewLabel = preview.previewType === "pull_request" && preview.prNumber
-              ? `PR #${preview.prNumber}`
-              : preview.previewId;
+            const previewLabel =
+              preview.previewType === "pull_request" && preview.prNumber
+                ? `PR #${preview.prNumber}`
+                : preview.previewId;
             logger.info(`Removed destroyed preview: ${previewLabel}`);
           } catch (error) {
             logger.error(

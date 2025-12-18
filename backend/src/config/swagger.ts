@@ -25,7 +25,7 @@ const options: swaggerJsdoc.Options = {
         description: "Development server",
       },
       {
-        url: "https://api.preview.previewcloud.cloud",
+        url: "https://api.previewcloud.cloud",
         description: "Production server",
       },
     ],

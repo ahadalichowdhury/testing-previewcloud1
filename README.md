@@ -56,7 +56,7 @@ PreviewCloud includes **comprehensive Swagger/OpenAPI documentation** for all AP
 Access the interactive API documentation:
 
 - **Local**: `http://localhost:3001/api/docs`
-- **Production**: `https://api.preview.previewcloud.cloud/api/docs`
+- **Production**: `https://api.previewcloud.cloud/api/docs`
 
 ### Features
 
@@ -103,7 +103,7 @@ jobs:
         uses: previewcloud/deploy@v1
         with:
           api-token: ${{ secrets.PREVIEWCLOUD_API_TOKEN }}
-          api-url: https://api.preview.previewcloud.cloud
+          api-url: https://api.previewcloud.cloud
 ```
 
 ### Create Preview Configuration
@@ -197,7 +197,7 @@ Key variables:
 ```bash
 # Domain Configuration
 BASE_DOMAIN=preview.previewcloud.cloud
-API_DOMAIN=api.preview.previewcloud.cloud
+API_DOMAIN=api.previewcloud.cloud
 
 # Database Configuration
 POSTGRES_HOST=localhost
@@ -259,23 +259,23 @@ Examples:
 
 ```bash
 # Via API
-curl https://api.preview.previewcloud.cloud/api/previews/123/logs
+curl https://api.previewcloud.cloud/api/previews/123/logs
 
 # Via WebSocket
-ws://api.preview.previewcloud.cloud/api/previews/123/logs/stream
+ws://api.previewcloud.cloud/api/previews/123/logs/stream
 ```
 
 ### Manual Management
 
 ```bash
 # List all previews
-curl https://api.preview.previewcloud.cloud/api/previews
+curl https://api.previewcloud.cloud/api/previews
 
 # Get preview details
-curl https://api.preview.previewcloud.cloud/api/previews/123
+curl https://api.previewcloud.cloud/api/previews/123
 
 # Destroy preview
-curl -X DELETE https://api.preview.previewcloud.cloud/api/previews/123 \
+curl -X DELETE https://api.previewcloud.cloud/api/previews/123 \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

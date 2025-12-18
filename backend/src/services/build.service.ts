@@ -71,7 +71,9 @@ export class BuildService {
     repoPath: string
   ): Promise<Record<string, string>> {
     logger.info(
-      `Building ${Object.keys(services).length} services for preview ${previewId}`
+      `Building ${
+        Object.keys(services).length
+      } services for preview ${previewId}`
     );
 
     const buildPromises = Object.entries(services).map(
