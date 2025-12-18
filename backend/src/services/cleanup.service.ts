@@ -88,11 +88,14 @@ export class CleanupScheduler {
 
         for (const preview of idlePreviews) {
           try {
-            logger.info(`Cleaning up idle preview: PR #${preview.prNumber}`);
-            await this.previewService.destroyPreview(preview.prNumber);
+            const previewLabel = preview.previewType === "pull_request" && preview.prNumber
+              ? `PR #${preview.prNumber}`
+              : preview.previewId;
+            logger.info(`Cleaning up idle preview: ${previewLabel}`);
+            await this.previewService.destroyPreview(preview.previewId);
           } catch (error) {
             logger.error(
-              `Failed to cleanup idle preview PR #${preview.prNumber}:`,
+              `Failed to cleanup idle preview ${preview.previewId}:`,
               error
             );
           }
@@ -121,15 +124,18 @@ export class CleanupScheduler {
         for (const preview of destroyedPreviews) {
           try {
             // Delete logs
-            await this.logsService.deleteLogsForPreview(preview.prNumber);
+            await this.logsService.deleteLogsForPreview(preview.previewId);
 
             // Delete preview document
             await Preview.deleteOne({ _id: preview._id });
 
-            logger.info(`Removed destroyed preview: PR #${preview.prNumber}`);
+            const previewLabel = preview.previewType === "pull_request" && preview.prNumber
+              ? `PR #${preview.prNumber}`
+              : preview.previewId;
+            logger.info(`Removed destroyed preview: ${previewLabel}`);
           } catch (error) {
             logger.error(
-              `Failed to remove destroyed preview PR #${preview.prNumber}:`,
+              `Failed to remove destroyed preview ${preview.previewId}:`,
               error
             );
           }
@@ -168,10 +174,10 @@ export class CleanupScheduler {
 
         for (const preview of oldestPreviews) {
           try {
-            await this.previewService.destroyPreview(preview.prNumber);
+            await this.previewService.destroyPreview(preview.previewId);
           } catch (error) {
             logger.error(
-              `Failed to destroy preview PR #${preview.prNumber}:`,
+              `Failed to destroy preview ${preview.previewId}:`,
               error
             );
           }

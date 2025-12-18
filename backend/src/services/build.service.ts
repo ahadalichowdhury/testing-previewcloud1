@@ -18,12 +18,12 @@ export class BuildService {
    * Build Docker image for a service
    */
   async buildServiceImage(
-    prNumber: number,
+    previewId: string,
     serviceName: string,
     serviceConfig: ServiceConfig,
     repoPath: string
   ): Promise<string> {
-    const imageTag = this.generateImageTag(prNumber, serviceName);
+    const imageTag = this.generateImageTag(previewId, serviceName);
     const dockerfilePath = path.join(repoPath, serviceConfig.dockerfile);
     const contextPath = serviceConfig.context
       ? path.join(repoPath, serviceConfig.context)
@@ -43,7 +43,7 @@ export class BuildService {
       await this.dockerService.buildImage(buildContext, (message) => {
         // Log to database
         this.logsService.createLog(
-          prNumber,
+          previewId,
           "build",
           `[${serviceName}] ${message}`
         );
@@ -54,7 +54,7 @@ export class BuildService {
     } catch (error) {
       logger.error(`Failed to build image for ${serviceName}:`, error);
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "build",
         `[${serviceName}] Build failed: ${(error as Error).message}`
       );
@@ -66,18 +66,18 @@ export class BuildService {
    * Build all services in parallel
    */
   async buildAllServices(
-    prNumber: number,
+    previewId: string,
     services: Record<string, ServiceConfig>,
     repoPath: string
   ): Promise<Record<string, string>> {
     logger.info(
-      `Building ${Object.keys(services).length} services for PR #${prNumber}`
+      `Building ${Object.keys(services).length} services for preview ${previewId}`
     );
 
     const buildPromises = Object.entries(services).map(
       async ([name, config]) => {
         const imageTag = await this.buildServiceImage(
-          prNumber,
+          previewId,
           name,
           config,
           repoPath
@@ -94,10 +94,10 @@ export class BuildService {
         imageTags[name] = imageTag;
       });
 
-      logger.info(`Successfully built all services for PR #${prNumber}`);
+      logger.info(`Successfully built all services for preview ${previewId}`);
       return imageTags;
     } catch (error) {
-      logger.error(`Failed to build services for PR #${prNumber}:`, error);
+      logger.error(`Failed to build services for preview ${previewId}:`, error);
       throw error;
     }
   }
@@ -105,24 +105,24 @@ export class BuildService {
   /**
    * Generate unique image tag
    */
-  private generateImageTag(prNumber: number, serviceName: string): string {
+  private generateImageTag(previewId: string, serviceName: string): string {
     const uniqueId = generateUniqueId();
-    return `previewcloud/pr-${prNumber}-${serviceName}:${uniqueId}`;
+    return `previewcloud/${previewId}-${serviceName}:${uniqueId}`;
   }
 
   /**
    * Clean up build artifacts
    */
   async cleanupBuildArtifacts(
-    prNumber: number,
+    previewId: string,
     services: string[]
   ): Promise<void> {
-    logger.info(`Cleaning up build artifacts for PR #${prNumber}`);
+    logger.info(`Cleaning up build artifacts for preview ${previewId}`);
 
     for (const serviceName of services) {
       try {
-        // Remove images that match this PR and service
-        const imagePattern = `previewcloud/pr-${prNumber}-${serviceName}`;
+        // Remove images that match this preview and service
+        const imagePattern = `previewcloud/${previewId}-${serviceName}`;
         // Note: This is a simplified cleanup, in production you'd want to list and remove specific images
         logger.debug(`Cleaned up images for ${imagePattern}`);
       } catch (error) {

@@ -313,9 +313,13 @@ export async function destroyPreview(
 
     // Try to parse as number (PR) or use as string (branch previewId)
     const prNumber = parseInt(identifier, 10);
-    await previewService.destroyPreview(
-      isNaN(prNumber) ? identifier : prNumber
-    );
+    if (isNaN(prNumber)) {
+      // It's a branch previewId (string)
+      await previewService.destroyPreview(identifier);
+    } else {
+      // It's a PR number (number)
+      await previewService.destroyPreview(prNumber);
+    }
 
     res.status(200).json({
       success: true,
