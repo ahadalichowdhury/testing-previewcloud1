@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { IPreview, Preview } from "../models/Preview.model";
 import {
   ContainerConfig,
@@ -33,7 +34,10 @@ export class PreviewService {
   /**
    * Create a new preview environment
    */
-  async createPreview(previewConfig: PreviewConfig): Promise<IPreview> {
+  async createPreview(
+    userId: mongoose.Types.ObjectId,
+    previewConfig: PreviewConfig
+  ): Promise<IPreview> {
     const {
       previewType,
       prNumber,
@@ -76,6 +80,7 @@ export class PreviewService {
 
       // Create preview document
       preview = await Preview.create({
+        userId, // Required: Owner of this preview
         previewType,
         prNumber:
           previewType === PreviewType.PULL_REQUEST ? prNumber : undefined,

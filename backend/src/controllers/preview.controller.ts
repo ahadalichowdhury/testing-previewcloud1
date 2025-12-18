@@ -110,7 +110,7 @@ export async function createOrUpdatePreview(
       logger.debug("Resource limit check:", error);
     }
 
-    const preview = await previewService.createPreview(previewConfig);
+    const preview = await previewService.createPreview(user._id, previewConfig);
 
     res.status(200).json({
       success: true,

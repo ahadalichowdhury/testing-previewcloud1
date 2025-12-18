@@ -10,6 +10,7 @@ interface PreviewConfig {
   database?: any;
   secrets?: string[];
   env?: Record<string, string>;
+  password?: string;
 }
 
 interface PreviewResponse {
@@ -38,7 +39,9 @@ async function run(): Promise<void> {
 
     // Get context
     const context = github.context;
-    const octokit = github.getOctokit(process.env.GITHUB_TOKEN || "");
+    // Only create Octokit if GITHUB_TOKEN is available (needed for PR comments)
+    const githubToken = process.env.GITHUB_TOKEN;
+    const octokit = githubToken ? github.getOctokit(githubToken) : null;
 
     // Determine preview type and identifier
     let previewType: "pull_request" | "branch";
@@ -125,34 +128,55 @@ async function run(): Promise<void> {
 
     core.info(`📄 Loaded config from ${configFile}`);
 
-    // Parse secrets
-    const secrets: Record<string, string> = {};
+    // Parse secrets into env variables
+    const env: Record<string, string> = {};
     if (secretsInput) {
       const secretLines = secretsInput.split("\n").filter((line) => line.trim());
       for (const line of secretLines) {
         const [key, value] = line.split("=");
         if (key && value) {
-          secrets[key.trim()] = value.trim();
+          env[key.trim()] = value.trim();
         }
       }
     }
 
-    // Build deployment payload
-    const payload = {
+    // Merge config.env with parsed secrets
+    if (config.env) {
+      Object.assign(env, config.env);
+    }
+
+    // Build deployment payload - match backend PreviewConfig interface
+    const payload: any = {
       previewType,
       prNumber: previewType === "pull_request" ? prNumber : undefined,
       repoName: context.repo.repo,
       repoOwner: context.repo.owner,
       branch: branchName,
       commitSha: context.sha,
-      config,
-      secrets,
-      metadata: {
-        actor: context.actor,
-        eventName: context.eventName,
-        action: context.payload.action,
-      },
+      services: config.services, // Extract services from config
+      database: config.database, // Extract database from config
     };
+
+    // Add optional fields only if they exist
+    if (Object.keys(env).length > 0) {
+      payload.env = env;
+    }
+    if (config.password) {
+      payload.password = config.password;
+    }
+
+    // Debug: Log payload structure (without sensitive data)
+    core.debug(`Payload structure: ${JSON.stringify({
+      previewType: payload.previewType,
+      prNumber: payload.prNumber,
+      repoName: payload.repoName,
+      repoOwner: payload.repoOwner,
+      branch: payload.branch,
+      commitSha: payload.commitSha?.substring(0, 7),
+      servicesCount: Object.keys(payload.services || {}).length,
+      hasDatabase: !!payload.database,
+      hasEnv: !!payload.env,
+    }, null, 2)}`);
 
     core.info("🔨 Deploying preview environment...");
 
@@ -186,7 +210,7 @@ async function run(): Promise<void> {
     // Comment on PR (only for pull_request events)
     if (
       commentOnPR &&
-      process.env.GITHUB_TOKEN &&
+      octokit &&
       previewType === "pull_request" &&
       prNumber
     ) {
@@ -198,6 +222,8 @@ async function run(): Promise<void> {
         response.data.previewId,
         deploymentTime
       );
+    } else if (commentOnPR && previewType === "pull_request" && !octokit) {
+      core.warning("GITHUB_TOKEN not available. Skipping PR comment.");
     }
   } catch (error: any) {
     core.setFailed(`Action failed: ${error.message}`);
@@ -212,30 +238,66 @@ async function deployPreview(
   wait: boolean,
   timeout: number
 ): Promise<PreviewResponse> {
-  const response = await axios.post(`${apiUrl}/api/previews`, payload, {
-    headers: {
-      Authorization: `Bearer ${apiToken}`,
-      "Content-Type": "application/json",
-    },
-    timeout: timeout * 1000,
-  });
+  try {
+    const response = await axios.post(`${apiUrl}/api/previews`, payload, {
+      headers: {
+        Authorization: `Bearer ${apiToken}`,
+        "Content-Type": "application/json",
+      },
+      timeout: timeout * 1000,
+    });
 
-  if (!response.data.success) {
-    throw new Error(response.data.message || "Deployment failed");
+    if (!response.data.success) {
+      const errorMessage = response.data.message || response.data.error?.message || "Deployment failed";
+      throw new Error(errorMessage);
+    }
+
+    // If wait is enabled, poll for completion
+    if (wait) {
+      const previewId = response.data.data.previewId;
+      return await waitForDeploymentComplete(
+        apiUrl,
+        apiToken,
+        previewId,
+        timeout
+      );
+    }
+
+    return response.data;
+  } catch (error: any) {
+    // Enhanced error handling with detailed logging
+    if (error.response) {
+      // Server responded with error status
+      const status = error.response.status;
+      const errorData = error.response.data;
+      
+      // Log full error response for debugging
+      core.error(`=== Backend Error Response (${status}) ===`);
+      core.error(`Status: ${status}`);
+      core.error(`Headers: ${JSON.stringify(error.response.headers, null, 2)}`);
+      core.error(`Data: ${JSON.stringify(errorData, null, 2)}`);
+      core.error(`=========================================`);
+      
+      // Extract error message from various possible structures
+      const errorMessage = 
+        errorData?.error?.message || 
+        errorData?.message || 
+        errorData?.error || 
+        error.message || 
+        `Request failed with status code ${status}`;
+      
+      throw new Error(`${errorMessage} (Status: ${status})`);
+    } else if (error.request) {
+      // Request made but no response
+      core.error(`No response received from server`);
+      core.error(`Request config: ${JSON.stringify(error.config, null, 2)}`);
+      throw new Error(`No response from server: ${error.message}`);
+    } else {
+      // Error setting up request
+      core.error(`Request setup error: ${error.message}`);
+      throw new Error(`Request setup error: ${error.message}`);
+    }
   }
-
-  // If wait is enabled, poll for completion
-  if (wait) {
-    const previewId = response.data.data.previewId;
-    return await waitForDeploymentComplete(
-      apiUrl,
-      apiToken,
-      previewId,
-      timeout
-    );
-  }
-
-  return response.data;
 }
 
 async function waitForDeploymentComplete(
