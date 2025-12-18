@@ -3,7 +3,7 @@
 # API and Dashboard
 api:
   dashboard: true
-  insecure: true  # Enable for debugging
+  insecure: true # Enable for debugging
 
 # Entry Points
 entryPoints:
@@ -15,7 +15,7 @@ entryPoints:
           to: websecure
           scheme: https
           permanent: true
-  
+
   websecure:
     address: ":443"
     http:
@@ -26,7 +26,7 @@ entryPoints:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: admin@previewcloud.cloud  # Change to your email
+      email: admin@previewcloud.cloud # Change to your email
       storage: /letsencrypt/acme.json
       httpChallenge:
         entryPoint: web
@@ -37,7 +37,7 @@ providers:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
     network: previewcloud
-  
+
   file:
     filename: /etc/traefik/dynamic.yml
     watch: true
