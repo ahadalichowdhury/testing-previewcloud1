@@ -19,8 +19,10 @@ const cleanSwaggerSpec = {
   ),
 };
 
-// Swagger UI
+// Swagger UI static files middleware - handles CSS, JS, etc.
 router.use("/", swaggerUi.serve);
+
+// Swagger UI setup - serves the HTML page
 router.get(
   "/",
   swaggerUi.setup(cleanSwaggerSpec, {
@@ -62,6 +64,15 @@ router.get(
 router.get("/json", (_req, res) => {
   res.setHeader("Content-Type", "application/json");
   res.send(cleanSwaggerSpec);
+});
+
+// Debug endpoint to check if route is working
+router.get("/test", (_req, res) => {
+  res.json({
+    success: true,
+    message: "Swagger route is working",
+    paths: Object.keys(cleanSwaggerSpec.paths || {}).length,
+  });
 });
 
 export default router;
