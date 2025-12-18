@@ -3,6 +3,7 @@
 ## 🎯 What is PreviewCloud?
 
 PreviewCloud automatically creates **isolated preview environments** for your GitHub Pull Requests and branches. Every PR or branch push gets its own:
+
 - ✅ Live preview URLs (HTTPS)
 - ✅ Isolated databases
 - ✅ Multiple services (frontend, backend, workers)
@@ -15,6 +16,7 @@ PreviewCloud automatically creates **isolated preview environments** for your Gi
 ### Step 1: Get Your API Token
 
 Ask your admin for:
+
 - **API URL**: `https://api.preview.previewcloud.cloud` (or your custom domain)
 - **API Token**: `eyJhbGciOiJIUzI1NiIs...` (JWT token)
 
@@ -26,16 +28,16 @@ Create `.github/workflows/preview.yml` in your repository:
 name: Preview Environment
 on:
   push:
-    branches: [ main, staging ]      # Deploy on push to these branches
+    branches: [main, staging] # Deploy on push to these branches
   pull_request:
-    branches: [ '*' ]                  # Deploy on PR to any branch
+    branches: ["*"] # Deploy on PR to any branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Deploy to PreviewCloud
         uses: previewcloud/action@v1
         with:
@@ -63,7 +65,7 @@ services:
     dockerfile: ./frontend/Dockerfile
     port: 3000
     env:
-      NEXT_PUBLIC_API_URL: ${API_URL}  # Auto-injected by PreviewCloud
+      NEXT_PUBLIC_API_URL: ${API_URL} # Auto-injected by PreviewCloud
       NODE_ENV: production
 
   # Backend API service
@@ -71,13 +73,13 @@ services:
     dockerfile: ./backend/Dockerfile
     port: 8080
     env:
-      DATABASE_URL: ${DATABASE_URL}    # Auto-injected by PreviewCloud
-      CORS_ORIGIN: ${WEB_URL}          # Auto-injected frontend URL
+      DATABASE_URL: ${DATABASE_URL} # Auto-injected by PreviewCloud
+      CORS_ORIGIN: ${WEB_URL} # Auto-injected frontend URL
       NODE_ENV: production
 
 # Optional: Database
 database:
-  type: postgres                       # or mysql, mongodb
+  type: postgres # or mysql, mongodb
   migrations: ./backend/migrations
 
 # Optional: Global environment variables
@@ -100,6 +102,7 @@ git push
 ### Step 6: Open a PR or Push to Branch
 
 **For Pull Requests:**
+
 1. Create a new branch: `git checkout -b feature/new-feature`
 2. Make changes and commit
 3. Push: `git push origin feature/new-feature`
@@ -107,16 +110,19 @@ git push
 5. **Wait 2-3 minutes** → Preview URLs appear in PR comment!
 
 **For Branch Pushes:**
+
 1. Push to configured branch (e.g., `main`): `git push origin main`
 2. **Wait 2-3 minutes** → Preview is ready!
 
 ### Step 7: Access Your Preview
 
 **Pull Request Preview:**
+
 - URLs appear as a comment on your PR
 - Example: `https://pr-42.api.acme-myapp.preview.previewcloud.cloud`
 
 **Branch Preview:**
+
 - Check PreviewCloud dashboard or API
 - Example: `https://branch-main.api.acme-myapp.preview.previewcloud.cloud`
 
@@ -127,6 +133,7 @@ git push
 ### Example 1: Full-Stack App (Next.js + Node.js API)
 
 **Repository Structure:**
+
 ```
 my-app/
 ├── frontend/
@@ -140,6 +147,7 @@ my-app/
 ```
 
 **preview.yaml:**
+
 ```yaml
 services:
   web:
@@ -161,6 +169,7 @@ database:
 ```
 
 **Result:**
+
 - Frontend: `https://pr-42.web.acme-myapp.preview.previewcloud.cloud`
 - Backend: `https://pr-42.api.acme-myapp.preview.previewcloud.cloud`
 - Database: Automatically provisioned and migrated
@@ -168,6 +177,7 @@ database:
 ### Example 2: Simple API Service
 
 **preview.yaml:**
+
 ```yaml
 services:
   api:
@@ -182,11 +192,13 @@ database:
 ```
 
 **Result:**
+
 - API: `https://pr-42.api.acme-myapp.preview.previewcloud.cloud`
 
 ### Example 3: Multiple Services (API + Worker)
 
 **preview.yaml:**
+
 ```yaml
 services:
   api:
@@ -209,27 +221,28 @@ services:
 ```yaml
 services:
   myservice:
-    dockerfile: ./path/to/Dockerfile    # Required
-    port: 8080                          # Optional (default: 8080)
-    context: ./path/to/context          # Optional (build context)
-    buildArgs:                          # Optional (Docker build args)
+    dockerfile: ./path/to/Dockerfile # Required
+    port: 8080 # Optional (default: 8080)
+    context: ./path/to/context # Optional (build context)
+    buildArgs: # Optional (Docker build args)
       NODE_VERSION: "20"
-    env:                                # Optional (environment variables)
+    env: # Optional (environment variables)
       MY_VAR: value
-      API_URL: ${API_URL}               # Use auto-injected variables
+      API_URL: ${API_URL} # Use auto-injected variables
 ```
 
 ### Database Configuration
 
 ```yaml
 database:
-  type: postgres | mysql | mongodb     # Required
-  migrations: ./path/to/migrations     # Optional
+  type: postgres | mysql | mongodb # Required
+  migrations: ./path/to/migrations # Optional
 ```
 
 ### Environment Variables
 
 **Auto-injected by PreviewCloud:**
+
 - `${API_URL}` - Backend service URL
 - `${WEB_URL}` - Frontend service URL
 - `${DATABASE_URL}` - Database connection string
@@ -240,6 +253,7 @@ database:
 - `${SERVICE_URL}` - Current service URL
 
 **Custom variables:**
+
 ```yaml
 env:
   MY_CUSTOM_VAR: value
@@ -251,22 +265,26 @@ env:
 ## 🌐 URL Patterns
 
 ### Pull Request Previews
+
 ```
 https://pr-{number}-{owner}.{service}.{domain}
 ```
 
 **Example:**
+
 - PR #42 from `acme/myapp`
 - Service: `api`
 - Domain: `preview.previewcloud.cloud`
 - URL: `https://pr-42.api.acme-myapp.preview.previewcloud.cloud`
 
 ### Branch Previews
+
 ```
 https://branch-{branch-name}-{owner}.{service}.{domain}
 ```
 
 **Example:**
+
 - Branch: `main` from `acme/myapp`
 - Service: `api`
 - URL: `https://branch-main.api.acme-myapp.preview.previewcloud.cloud`
@@ -276,15 +294,17 @@ https://branch-{branch-name}-{owner}.{service}.{domain}
 ## 📊 Viewing Logs
 
 ### Via API
+
 ```bash
 curl https://api.preview.previewcloud.cloud/api/previews/42/logs \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### Via WebSocket (Real-time)
+
 ```javascript
 const ws = new WebSocket(
-  'wss://api.preview.previewcloud.cloud/api/previews/42/logs/stream'
+  "wss://api.preview.previewcloud.cloud/api/previews/42/logs/stream"
 );
 
 ws.onmessage = (event) => {
@@ -298,11 +318,13 @@ ws.onmessage = (event) => {
 ## 🗑️ Cleanup
 
 ### Automatic Cleanup
+
 - **PR Previews**: Auto-destroyed when PR is closed/merged
 - **Branch Previews**: Auto-destroyed after 48 hours of inactivity
 - **All Previews**: Cleaned up by scheduler every 30 minutes
 
 ### Manual Cleanup
+
 ```bash
 # Destroy a preview
 curl -X DELETE \
@@ -315,37 +337,45 @@ curl -X DELETE \
 ## 🎯 Common Use Cases
 
 ### Use Case 1: PR Review Environments
+
 ```yaml
 on:
   pull_request:
-    branches: [ '*' ]
+    branches: ["*"]
 ```
+
 **Result:** Every PR gets its own preview automatically.
 
 ### Use Case 2: Staging Environment
+
 ```yaml
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 ```
+
 **Result:** `main` branch always has a live preview.
 
 ### Use Case 3: Feature Branch Testing
+
 ```yaml
 on:
   push:
-    branches: [ feature/*, develop ]
+    branches: [feature/*, develop]
 ```
+
 **Result:** Specific branches get previews for testing.
 
 ### Use Case 4: Combined (PR + Staging)
+
 ```yaml
 on:
   push:
-    branches: [ main, staging ]
+    branches: [main, staging]
   pull_request:
-    branches: [ '*' ]
+    branches: ["*"]
 ```
+
 **Result:** PRs get previews AND staging branches stay updated.
 
 ---
@@ -355,16 +385,19 @@ on:
 ### Preview Not Deploying?
 
 1. **Check GitHub Actions logs**
+
    - Go to your repository → **Actions** tab
    - Click on the failed workflow
    - Check error messages
 
 2. **Verify `preview.yaml` exists**
+
    ```bash
    ls preview.yaml
    ```
 
 3. **Check Dockerfile paths**
+
    - Ensure paths in `preview.yaml` are correct
    - Dockerfiles must exist at specified paths
 
@@ -395,6 +428,7 @@ on:
 ## 📚 API Reference
 
 ### Create/Update Preview
+
 ```bash
 POST /api/previews
 Authorization: Bearer YOUR_TOKEN
@@ -413,6 +447,7 @@ Content-Type: application/json
 ```
 
 ### Get Preview Details
+
 ```bash
 GET /api/previews/{identifier}
 # For PR: GET /api/previews/42
@@ -420,17 +455,20 @@ GET /api/previews/{identifier}
 ```
 
 ### List All Previews
+
 ```bash
 GET /api/previews?status=running&repoOwner=acme
 ```
 
 ### Destroy Preview
+
 ```bash
 DELETE /api/previews/{identifier}
 Authorization: Bearer YOUR_TOKEN
 ```
 
 ### Get Logs
+
 ```bash
 GET /api/previews/{identifier}/logs
 GET /api/previews/{identifier}/logs/paginated?page=1&limit=50
@@ -441,27 +479,32 @@ GET /api/previews/{identifier}/logs/paginated?page=1&limit=50
 ## 🎓 Best Practices
 
 ### 1. Use Environment Variables
+
 ```yaml
 env:
-  NEXT_PUBLIC_API_URL: ${API_URL}  # ✅ Good
+  NEXT_PUBLIC_API_URL: ${API_URL} # ✅ Good
   # Don't hardcode URLs
 ```
 
 ### 2. Keep Dockerfiles Simple
+
 - Use multi-stage builds
 - Cache dependencies
 - Keep images small
 
 ### 3. Database Migrations
+
 - Always test migrations locally first
 - Use idempotent migrations
 - Keep migration files small
 
 ### 4. Service Communication
+
 - Use `${API_URL}` for frontend → backend calls
 - Use service names for internal calls (e.g., `http://worker:3001`)
 
 ### 5. Resource Management
+
 - Don't create too many previews (default limit: 20)
 - Clean up old previews manually if needed
 - Use branch filtering to avoid unnecessary previews
@@ -479,10 +522,10 @@ env:
 ## 🎉 That's It!
 
 You're now ready to use PreviewCloud! Just:
+
 1. ✅ Add GitHub Action
 2. ✅ Create `preview.yaml`
 3. ✅ Push code or open PR
 4. ✅ Get preview URLs automatically!
 
 **Happy Previewing! 🚀**
-

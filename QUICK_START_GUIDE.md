@@ -3,11 +3,14 @@
 ## For Developers
 
 ### 1️⃣ Get Your Token (30 seconds)
+
 Ask your admin for:
+
 - API URL: `https://api.preview.previewcloud.cloud`
 - API Token: `eyJhbGciOiJIUzI1NiIs...`
 
 ### 2️⃣ Add GitHub Secret (1 minute)
+
 1. Go to: **Repository** → **Settings** → **Secrets** → **Actions**
 2. Click **New repository secret**
 3. Name: `PREVIEWCLOUD_TOKEN`
@@ -15,15 +18,16 @@ Ask your admin for:
 5. Click **Add secret**
 
 ### 3️⃣ Create GitHub Action (1 minute)
+
 Create `.github/workflows/preview.yml`:
 
 ```yaml
 name: Preview Environment
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ '*' ]
+    branches: ["*"]
 
 jobs:
   deploy:
@@ -37,6 +41,7 @@ jobs:
 ```
 
 ### 4️⃣ Create preview.yaml (2 minutes)
+
 Create `preview.yaml` in repository root:
 
 ```yaml
@@ -51,6 +56,7 @@ database:
 ```
 
 ### 5️⃣ Push & Done! (30 seconds)
+
 ```bash
 git add .github/workflows/preview.yml preview.yaml
 git commit -m "Add PreviewCloud"
@@ -64,6 +70,7 @@ git push
 ## Example: Full-Stack App
 
 **preview.yaml:**
+
 ```yaml
 services:
   web:
@@ -83,6 +90,7 @@ database:
 ```
 
 **Result:**
+
 - Frontend: `https://pr-42.web.your-repo.preview.previewcloud.cloud`
 - Backend: `https://pr-42.api.your-repo.preview.previewcloud.cloud`
 
@@ -93,7 +101,7 @@ database:
 ✅ **PR Opened** → Preview created  
 ✅ **PR Updated** → Preview updated  
 ✅ **PR Closed** → Preview destroyed  
-✅ **Push to Branch** → Preview created/updated  
+✅ **Push to Branch** → Preview created/updated
 
 **No manual steps needed!** 🎯
 
@@ -104,4 +112,3 @@ database:
 - Full Guide: See `USER_GUIDE.md`
 - API Docs: `https://api.preview.previewcloud.cloud/api/docs`
 - Contact your admin
-
