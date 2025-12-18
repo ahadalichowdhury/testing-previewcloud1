@@ -2,7 +2,6 @@ import * as fs from "fs";
 import mysql from "mysql2/promise";
 import * as path from "path";
 import { config } from "../../config/env";
-import { generateDatabaseName } from "../../utils/helpers";
 import { logger } from "../../utils/logger";
 import { IDBProvisioner } from "./provisioner.interface";
 
@@ -21,22 +20,20 @@ export class MySQLProvisioner implements IDBProvisioner {
     });
   }
 
-  async createDatabase(prNumber: number): Promise<string> {
-    const dbName = generateDatabaseName(prNumber);
-
+  async createDatabase(_previewId: string, dbName: string): Promise<string> {
     try {
       // Check if database already exists
-      const exists = await this.databaseExists(prNumber);
+      const exists = await this.databaseExists(dbName);
       if (exists) {
         logger.info(`MySQL database ${dbName} already exists`);
-        return this.getConnectionString(prNumber);
+        return this.getConnectionString(dbName);
       }
 
       // Create database
-      await this.pool.query(`CREATE DATABASE ${dbName}`);
+      await this.pool.query(`CREATE DATABASE \`${dbName}\``);
       logger.info(`MySQL database created: ${dbName}`);
 
-      return this.getConnectionString(prNumber);
+      return this.getConnectionString(dbName);
     } catch (error) {
       logger.error(`Failed to create MySQL database ${dbName}:`, error);
       throw error;
@@ -92,11 +89,9 @@ export class MySQLProvisioner implements IDBProvisioner {
     }
   }
 
-  async destroyDatabase(prNumber: number): Promise<void> {
-    const dbName = generateDatabaseName(prNumber);
-
+  async destroyDatabase(_previewId: string, dbName: string): Promise<void> {
     try {
-      await this.pool.query(`DROP DATABASE IF EXISTS ${dbName}`);
+      await this.pool.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
       logger.info(`MySQL database destroyed: ${dbName}`);
     } catch (error) {
       logger.error(`Failed to destroy MySQL database ${dbName}:`, error);
@@ -104,9 +99,7 @@ export class MySQLProvisioner implements IDBProvisioner {
     }
   }
 
-  async databaseExists(prNumber: number): Promise<boolean> {
-    const dbName = generateDatabaseName(prNumber);
-
+  async databaseExists(dbName: string): Promise<boolean> {
     try {
       const [rows] = await this.pool.query(
         `SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = ?`,
@@ -119,8 +112,7 @@ export class MySQLProvisioner implements IDBProvisioner {
     }
   }
 
-  getConnectionString(prNumber: number): string {
-    const dbName = generateDatabaseName(prNumber);
+  getConnectionString(dbName: string): string {
     return `mysql://${config.mysqlAdminUser}:${config.mysqlAdminPassword}@${config.mysqlHost}:${config.mysqlPort}/${dbName}`;
   }
 

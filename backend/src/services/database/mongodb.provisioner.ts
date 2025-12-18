@@ -2,7 +2,6 @@ import * as fs from "fs";
 import { MongoClient } from "mongodb";
 import * as path from "path";
 import { config } from "../../config/env";
-import { generateDatabaseName } from "../../utils/helpers";
 import { logger } from "../../utils/logger";
 import { IDBProvisioner } from "./provisioner.interface";
 
@@ -21,17 +20,15 @@ export class MongoDBProvisioner implements IDBProvisioner {
     this.client = new MongoClient(this.adminUri);
   }
 
-  async createDatabase(prNumber: number): Promise<string> {
-    const dbName = generateDatabaseName(prNumber);
-
+  async createDatabase(_previewId: string, dbName: string): Promise<string> {
     try {
       await this.client.connect();
 
       // Check if database already exists
-      const exists = await this.databaseExists(prNumber);
+      const exists = await this.databaseExists(dbName);
       if (exists) {
         logger.info(`MongoDB database ${dbName} already exists`);
-        return this.getConnectionString(prNumber);
+        return this.getConnectionString(dbName);
       }
 
       // MongoDB creates database automatically when you insert data
@@ -40,7 +37,7 @@ export class MongoDBProvisioner implements IDBProvisioner {
       await db.createCollection("_init");
       logger.info(`MongoDB database created: ${dbName}`);
 
-      return this.getConnectionString(prNumber);
+      return this.getConnectionString(dbName);
     } catch (error) {
       logger.error(`Failed to create MongoDB database ${dbName}:`, error);
       throw error;
@@ -103,9 +100,7 @@ export class MongoDBProvisioner implements IDBProvisioner {
     }
   }
 
-  async destroyDatabase(prNumber: number): Promise<void> {
-    const dbName = generateDatabaseName(prNumber);
-
+  async destroyDatabase(_previewId: string, dbName: string): Promise<void> {
     try {
       await this.client.connect();
       await this.client.db(dbName).dropDatabase();
@@ -118,9 +113,7 @@ export class MongoDBProvisioner implements IDBProvisioner {
     }
   }
 
-  async databaseExists(prNumber: number): Promise<boolean> {
-    const dbName = generateDatabaseName(prNumber);
-
+  async databaseExists(dbName: string): Promise<boolean> {
     try {
       await this.client.connect();
       const adminDb = this.client.db().admin();
@@ -134,9 +127,7 @@ export class MongoDBProvisioner implements IDBProvisioner {
     }
   }
 
-  getConnectionString(prNumber: number): string {
-    const dbName = generateDatabaseName(prNumber);
-
+  getConnectionString(dbName: string): string {
     if (config.mongodbAdminUser && config.mongodbAdminPassword) {
       return `mongodb://${config.mongodbAdminUser}:${config.mongodbAdminPassword}@${config.mongodbHost}:${config.mongodbPort}/${dbName}`;
     }

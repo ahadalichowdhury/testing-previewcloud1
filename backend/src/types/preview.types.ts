@@ -7,6 +7,11 @@ export enum PreviewStatus {
   FAILED = "failed",
 }
 
+export enum PreviewType {
+  PULL_REQUEST = "pull_request",
+  BRANCH = "branch",
+}
+
 export enum ServiceStatus {
   BUILDING = "building",
   RUNNING = "running",
@@ -42,7 +47,8 @@ export interface DatabaseConfig {
 }
 
 export interface PreviewConfig {
-  prNumber: number;
+  previewType: PreviewType; // PR or BRANCH
+  prNumber?: number; // Required for PR type, optional for BRANCH
   repoName: string;
   repoOwner: string;
   branch: string;
@@ -54,7 +60,9 @@ export interface PreviewConfig {
 }
 
 export interface PreviewDetails {
-  prNumber: number;
+  previewType: PreviewType;
+  prNumber?: number;
+  previewId: string; // Unique identifier: pr-{number} or branch-{branch-name}
   repoName: string;
   repoOwner: string;
   branch: string;

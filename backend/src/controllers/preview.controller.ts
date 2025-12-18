@@ -68,15 +68,22 @@ export async function createOrUpdatePreview(
     const previewConfig: PreviewConfig = req.body;
 
     // Validate required fields
+    if (!previewConfig.previewType) {
+      throw new AppError("Missing required field: previewType", 400);
+    }
+
     if (
-      !previewConfig.prNumber ||
-      !previewConfig.repoName ||
-      !previewConfig.repoOwner
+      previewConfig.previewType === "pull_request" &&
+      !previewConfig.prNumber
     ) {
       throw new AppError(
-        "Missing required fields: prNumber, repoName, repoOwner",
+        "Missing required field: prNumber (required for pull_request type)",
         400
       );
+    }
+
+    if (!previewConfig.repoName || !previewConfig.repoOwner) {
+      throw new AppError("Missing required fields: repoName, repoOwner", 400);
     }
 
     if (
@@ -86,8 +93,12 @@ export async function createOrUpdatePreview(
       throw new AppError("At least one service must be defined", 400);
     }
 
+    const previewLabel =
+      previewConfig.previewType === "pull_request"
+        ? `PR #${previewConfig.prNumber}`
+        : `branch ${previewConfig.branch}`;
     logger.info(
-      `User ${user.email} creating/updating preview for PR #${previewConfig.prNumber} in ${previewConfig.repoOwner}/${previewConfig.repoName}`
+      `User ${user.email} creating/updating preview for ${previewLabel} in ${previewConfig.repoOwner}/${previewConfig.repoName}`
     );
 
     // Check resource limits before creating (only for new previews)
@@ -155,13 +166,17 @@ export async function createOrUpdatePreview(
  */
 export async function getPreview(req: Request, res: Response): Promise<void> {
   try {
-    const prNumber = parseInt(req.params.prNumber, 10);
+    const identifier = req.params.prNumber || req.params.previewId;
 
-    if (isNaN(prNumber)) {
-      throw new AppError("Invalid PR number", 400);
+    if (!identifier) {
+      throw new AppError("Missing preview identifier", 400);
     }
 
-    const preview = await previewService.getPreview(prNumber);
+    // Try to parse as number (PR) or use as string (branch previewId)
+    const prNumber = parseInt(identifier, 10);
+    const preview = await previewService.getPreview(
+      isNaN(prNumber) ? identifier : prNumber
+    );
 
     if (!preview) {
       throw new AppError("Preview not found", 404);
@@ -288,15 +303,19 @@ export async function destroyPreview(
   res: Response
 ): Promise<void> {
   try {
-    const prNumber = parseInt(req.params.prNumber, 10);
+    const identifier = req.params.prNumber || req.params.previewId;
 
-    if (isNaN(prNumber)) {
-      throw new AppError("Invalid PR number", 400);
+    if (!identifier) {
+      throw new AppError("Missing preview identifier", 400);
     }
 
-    logger.info(`API request to destroy preview for PR #${prNumber}`);
+    logger.info(`API request to destroy preview: ${identifier}`);
 
-    await previewService.destroyPreview(prNumber);
+    // Try to parse as number (PR) or use as string (branch previewId)
+    const prNumber = parseInt(identifier, 10);
+    await previewService.destroyPreview(
+      isNaN(prNumber) ? identifier : prNumber
+    );
 
     res.status(200).json({
       success: true,

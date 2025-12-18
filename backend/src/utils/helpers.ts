@@ -24,33 +24,52 @@ export function generateUniqueId(): string {
  * Generate a container name
  */
 export function generateContainerName(
-  prNumber: number,
+  previewId: string,
   serviceName: string
 ): string {
   const sanitized = sanitizeName(serviceName);
   const id = generateUniqueId();
-  return `pr-${prNumber}-${sanitized}-${id}`;
+  return `${previewId}-${sanitized}-${id}`;
 }
 
 /**
  * Generate a database name
  */
-export function generateDatabaseName(prNumber: number): string {
-  return `pr_${prNumber}_db`;
+export function generateDatabaseName(previewId: string): string {
+  const sanitized = sanitizeName(previewId);
+  return `${sanitized}_db`;
 }
 
 /**
  * Generate a preview URL
+ * For PR: pr-{number}-{owner}.{service}.{domain}
+ * For Branch: branch-{branch-name}-{owner}.{service}.{domain}
  */
 export function generatePreviewUrl(
-  prNumber: number,
+  previewId: string,
   repoOwner: string,
   serviceName: string,
   baseDomain: string
 ): string {
   const sanitizedOwner = sanitizeName(repoOwner);
   const sanitizedService = sanitizeName(serviceName);
-  return `pr-${prNumber}-${sanitizedOwner}.${sanitizedService}.${baseDomain}`;
+  return `${previewId}-${sanitizedOwner}.${sanitizedService}.${baseDomain}`;
+}
+
+/**
+ * Generate preview ID from preview type and identifier
+ */
+export function generatePreviewId(
+  previewType: "pull_request" | "branch",
+  prNumber?: number,
+  branchName?: string
+): string {
+  if (previewType === "pull_request" && prNumber !== undefined) {
+    return `pr-${prNumber}`;
+  } else if (previewType === "branch" && branchName) {
+    return `branch-${sanitizeName(branchName)}`;
+  }
+  throw new Error("Invalid preview type or missing identifier");
 }
 
 /**

@@ -2,7 +2,6 @@ import * as fs from "fs";
 import * as path from "path";
 import { Client, Pool } from "pg";
 import { config } from "../../config/env";
-import { generateDatabaseName } from "../../utils/helpers";
 import { logger } from "../../utils/logger";
 import { IDBProvisioner } from "./provisioner.interface";
 
@@ -19,22 +18,20 @@ export class PostgresProvisioner implements IDBProvisioner {
     });
   }
 
-  async createDatabase(prNumber: number): Promise<string> {
-    const dbName = generateDatabaseName(prNumber);
-
+  async createDatabase(_previewId: string, dbName: string): Promise<string> {
     try {
       // Check if database already exists
-      const exists = await this.databaseExists(prNumber);
+      const exists = await this.databaseExists(dbName);
       if (exists) {
         logger.info(`PostgreSQL database ${dbName} already exists`);
-        return this.getConnectionString(prNumber);
+        return this.getConnectionString(dbName);
       }
 
       // Create database
-      await this.pool.query(`CREATE DATABASE ${dbName}`);
+      await this.pool.query(`CREATE DATABASE "${dbName}"`);
       logger.info(`PostgreSQL database created: ${dbName}`);
 
-      return this.getConnectionString(prNumber);
+      return this.getConnectionString(dbName);
     } catch (error) {
       logger.error(`Failed to create PostgreSQL database ${dbName}:`, error);
       throw error;
@@ -82,20 +79,21 @@ export class PostgresProvisioner implements IDBProvisioner {
     }
   }
 
-  async destroyDatabase(prNumber: number): Promise<void> {
-    const dbName = generateDatabaseName(prNumber);
-
+  async destroyDatabase(_previewId: string, dbName: string): Promise<void> {
     try {
       // Terminate active connections
-      await this.pool.query(`
+      await this.pool.query(
+        `
         SELECT pg_terminate_backend(pg_stat_activity.pid)
         FROM pg_stat_activity
-        WHERE pg_stat_activity.datname = '${dbName}'
+        WHERE pg_stat_activity.datname = $1
           AND pid <> pg_backend_pid()
-      `);
+      `,
+        [dbName]
+      );
 
       // Drop database
-      await this.pool.query(`DROP DATABASE IF EXISTS ${dbName}`);
+      await this.pool.query(`DROP DATABASE IF EXISTS "${dbName}"`);
       logger.info(`PostgreSQL database destroyed: ${dbName}`);
     } catch (error) {
       logger.error(`Failed to destroy PostgreSQL database ${dbName}:`, error);
@@ -103,9 +101,7 @@ export class PostgresProvisioner implements IDBProvisioner {
     }
   }
 
-  async databaseExists(prNumber: number): Promise<boolean> {
-    const dbName = generateDatabaseName(prNumber);
-
+  async databaseExists(dbName: string): Promise<boolean> {
     try {
       const result = await this.pool.query(
         `SELECT 1 FROM pg_database WHERE datname = $1`,
@@ -118,8 +114,7 @@ export class PostgresProvisioner implements IDBProvisioner {
     }
   }
 
-  getConnectionString(prNumber: number): string {
-    const dbName = generateDatabaseName(prNumber);
+  getConnectionString(dbName: string): string {
     return `postgresql://${config.postgresAdminUser}:${config.postgresAdminPassword}@${config.postgresHost}:${config.postgresPort}/${dbName}`;
   }
 

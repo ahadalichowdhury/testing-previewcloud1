@@ -1,10 +1,16 @@
 import mongoose, { Document, Schema } from "mongoose";
-import { DatabaseType, PreviewStatus } from "../types/preview.types";
+import {
+  DatabaseType,
+  PreviewStatus,
+  PreviewType,
+} from "../types/preview.types";
 
 export interface IPreview extends Document {
   userId: mongoose.Types.ObjectId; // NEW: Owner of this preview
   organizationId?: mongoose.Types.ObjectId; // NEW: Optional organization
-  prNumber: number;
+  previewType: PreviewType; // PR or BRANCH
+  prNumber?: number; // Required for PR type, optional for BRANCH
+  previewId: string; // Unique identifier: pr-{number} or branch-{branch-name}
   repoName: string;
   repoOwner: string;
   branch: string;
@@ -44,9 +50,21 @@ const PreviewSchema = new Schema<IPreview>(
       ref: "Organization",
       index: true,
     },
+    previewType: {
+      type: String,
+      enum: Object.values(PreviewType),
+      required: true,
+      index: true,
+    },
     prNumber: {
       type: Number,
+      required: false,
+      index: true,
+    },
+    previewId: {
+      type: String,
       required: true,
+      unique: true,
       index: true,
     },
     repoName: {
@@ -113,5 +131,6 @@ const PreviewSchema = new Schema<IPreview>(
 
 // Compound index for repo lookups
 PreviewSchema.index({ repoOwner: 1, repoName: 1 });
+PreviewSchema.index({ previewType: 1, branch: 1, repoOwner: 1, repoName: 1 });
 
 export const Preview = mongoose.model<IPreview>("Preview", PreviewSchema);

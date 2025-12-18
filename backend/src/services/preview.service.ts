@@ -5,9 +5,14 @@ import {
   PreviewConfig,
   PreviewDetails,
   PreviewStatus,
+  PreviewType,
   ServiceStatus,
 } from "../types/preview.types";
-import { generateContainerName } from "../utils/helpers";
+import {
+  generateContainerName,
+  generateDatabaseName,
+  generatePreviewId,
+} from "../utils/helpers";
 import { logger } from "../utils/logger";
 import { DBProvisionerFactory } from "./database/factory";
 import { DockerService } from "./docker.service";
@@ -29,29 +34,55 @@ export class PreviewService {
    * Create a new preview environment
    */
   async createPreview(previewConfig: PreviewConfig): Promise<IPreview> {
-    const { prNumber, repoName, repoOwner, services, database } = previewConfig;
+    const {
+      previewType,
+      prNumber,
+      repoName,
+      repoOwner,
+      branch,
+      services,
+      database,
+    } = previewConfig;
+
+    // Generate preview ID
+    const previewId = generatePreviewId(previewType, prNumber, branch);
+
+    // Validate required fields based on type
+    if (previewType === PreviewType.PULL_REQUEST && !prNumber) {
+      throw new Error("prNumber is required for pull_request preview type");
+    }
+    if (previewType === PreviewType.BRANCH && !branch) {
+      throw new Error("branch is required for branch preview type");
+    }
 
     try {
-      logger.info(`Creating preview for PR #${prNumber}`);
+      const previewLabel =
+        previewType === PreviewType.PULL_REQUEST
+          ? `PR #${prNumber}`
+          : `branch ${branch}`;
+      logger.info(`Creating preview for ${previewLabel}`);
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "system",
-        `Starting preview creation for PR #${prNumber}`
+        `Starting preview creation for ${previewLabel}`
       );
 
       // Check if preview already exists
-      let preview = await Preview.findOne({ prNumber });
+      let preview = await Preview.findOne({ previewId });
       if (preview && preview.status !== PreviewStatus.DESTROYED) {
-        logger.info(`Preview for PR #${prNumber} already exists, updating...`);
-        return this.updatePreview(prNumber, previewConfig);
+        logger.info(`Preview for ${previewLabel} already exists, updating...`);
+        return this.updatePreview(previewId, previewConfig);
       }
 
       // Create preview document
       preview = await Preview.create({
-        prNumber,
+        previewType,
+        prNumber:
+          previewType === PreviewType.PULL_REQUEST ? prNumber : undefined,
+        previewId,
         repoName,
         repoOwner,
-        branch: previewConfig.branch,
+        branch,
         commitSha: previewConfig.commitSha,
         status: PreviewStatus.CREATING,
         services: [],
@@ -67,7 +98,7 @@ export class PreviewService {
       // Step 2: Build images (this would normally pull from a registry or build locally)
       // For now, we assume images are pre-built or passed in
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "build",
         "Starting service builds..."
       );
@@ -81,23 +112,23 @@ export class PreviewService {
       await preview.save();
 
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "system",
         `Preview created successfully`
       );
-      logger.info(`Preview created for PR #${prNumber}`);
+      logger.info(`Preview created for ${previewLabel}`);
 
       return preview;
     } catch (error) {
-      logger.error(`Failed to create preview for PR #${prNumber}:`, error);
+      logger.error(`Failed to create preview for ${previewId}:`, error);
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "system",
         `Preview creation failed: ${(error as Error).message}`
       );
 
       // Mark as failed
-      const preview = await Preview.findOne({ prNumber });
+      const preview = await Preview.findOne({ previewId });
       if (preview) {
         preview.status = PreviewStatus.FAILED;
         await preview.save();
@@ -111,20 +142,20 @@ export class PreviewService {
    * Update an existing preview
    */
   async updatePreview(
-    prNumber: number,
+    previewId: string,
     previewConfig: PreviewConfig
   ): Promise<IPreview> {
     try {
-      logger.info(`Updating preview for PR #${prNumber}`);
+      logger.info(`Updating preview ${previewId}`);
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "system",
         `Starting preview update`
       );
 
-      const preview = await Preview.findOne({ prNumber });
+      const preview = await Preview.findOne({ previewId });
       if (!preview) {
-        throw new Error(`Preview for PR #${prNumber} not found`);
+        throw new Error(`Preview ${previewId} not found`);
       }
 
       preview.status = PreviewStatus.UPDATING;
@@ -146,17 +177,17 @@ export class PreviewService {
       await preview.save();
 
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "system",
         `Preview updated successfully`
       );
-      logger.info(`Preview updated for PR #${prNumber}`);
+      logger.info(`Preview updated for ${previewId}`);
 
       return preview;
     } catch (error) {
-      logger.error(`Failed to update preview for PR #${prNumber}:`, error);
+      logger.error(`Failed to update preview ${previewId}:`, error);
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "system",
         `Preview update failed: ${(error as Error).message}`
       );
@@ -165,22 +196,40 @@ export class PreviewService {
   }
 
   /**
-   * Destroy a preview environment
+   * Destroy a preview environment by previewId
    */
-  async destroyPreview(prNumber: number): Promise<void> {
+  async destroyPreview(previewId: string): Promise<void>;
+  /**
+   * Destroy a preview environment by PR number (backward compatibility)
+   */
+  async destroyPreview(prNumber: number): Promise<void>;
+  async destroyPreview(identifier: string | number): Promise<void> {
     try {
-      logger.info(`Destroying preview for PR #${prNumber}`);
+      // Support both previewId (string) and prNumber (number) for backward compatibility
+      let preview: IPreview | null;
+      if (typeof identifier === "number") {
+        // Legacy: find by prNumber
+        preview = await Preview.findOne({
+          previewType: PreviewType.PULL_REQUEST,
+          prNumber: identifier,
+        });
+      } else {
+        // New: find by previewId
+        preview = await Preview.findOne({ previewId: identifier });
+      }
+
+      if (!preview) {
+        logger.warn(`Preview ${identifier} not found`);
+        return;
+      }
+
+      const previewId = preview.previewId;
+      logger.info(`Destroying preview ${previewId}`);
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "system",
         `Starting preview destruction`
       );
-
-      const preview = await Preview.findOne({ prNumber });
-      if (!preview) {
-        logger.warn(`Preview for PR #${prNumber} not found`);
-        return;
-      }
 
       preview.status = PreviewStatus.DESTROYING;
       await preview.save();
@@ -207,22 +256,35 @@ export class PreviewService {
       await preview.save();
 
       await this.logsService.createLog(
-        prNumber,
+        previewId,
         "system",
         `Preview destroyed successfully`
       );
-      logger.info(`Preview destroyed for PR #${prNumber}`);
+      logger.info(`Preview destroyed for ${previewId}`);
     } catch (error) {
-      logger.error(`Failed to destroy preview for PR #${prNumber}:`, error);
+      logger.error(`Failed to destroy preview ${identifier}:`, error);
       throw error;
     }
   }
 
   /**
-   * Get preview details
+   * Get preview details by previewId or PR number
    */
-  async getPreview(prNumber: number): Promise<PreviewDetails | null> {
-    const preview = await Preview.findOne({ prNumber });
+  async getPreview(
+    identifier: string | number
+  ): Promise<PreviewDetails | null> {
+    let preview: IPreview | null;
+    if (typeof identifier === "number") {
+      // Legacy: find by prNumber
+      preview = await Preview.findOne({
+        previewType: PreviewType.PULL_REQUEST,
+        prNumber: identifier,
+      });
+    } else {
+      // New: find by previewId
+      preview = await Preview.findOne({ previewId: identifier });
+    }
+
     if (!preview) {
       return null;
     }
@@ -262,8 +324,9 @@ export class PreviewService {
     databaseConfig: any
   ): Promise<void> {
     try {
+      const dbName = generateDatabaseName(preview.previewId);
       await this.logsService.createLog(
-        preview.prNumber,
+        preview.previewId,
         "database",
         `Provisioning ${databaseConfig.type} database...`
       );
@@ -272,13 +335,14 @@ export class PreviewService {
         databaseConfig.type as DatabaseType
       );
       const connectionString = await provisioner.createDatabase(
-        preview.prNumber
+        preview.previewId,
+        dbName
       );
 
       // Run migrations if specified
       if (databaseConfig.migrations) {
         await this.logsService.createLog(
-          preview.prNumber,
+          preview.previewId,
           "database",
           `Running migrations...`
         );
@@ -290,19 +354,19 @@ export class PreviewService {
 
       preview.database = {
         type: databaseConfig.type,
-        name: `pr_${preview.prNumber}_db`,
+        name: dbName,
         connectionString,
       };
       await preview.save();
 
       await this.logsService.createLog(
-        preview.prNumber,
+        preview.previewId,
         "database",
         `Database provisioned successfully`
       );
     } catch (error) {
       logger.error(
-        `Failed to provision database for PR #${preview.prNumber}:`,
+        `Failed to provision database for ${preview.previewId}:`,
         error
       );
       throw error;
@@ -317,7 +381,7 @@ export class PreviewService {
       if (!preview.database) return;
 
       await this.logsService.createLog(
-        preview.prNumber,
+        preview.previewId,
         "database",
         `Destroying database...`
       );
@@ -325,16 +389,19 @@ export class PreviewService {
       const provisioner = DBProvisionerFactory.getProvisioner(
         preview.database.type
       );
-      await provisioner.destroyDatabase(preview.prNumber);
+      await provisioner.destroyDatabase(
+        preview.previewId,
+        preview.database.name
+      );
 
       await this.logsService.createLog(
-        preview.prNumber,
+        preview.previewId,
         "database",
         `Database destroyed`
       );
     } catch (error) {
       logger.error(
-        `Failed to destroy database for PR #${preview.prNumber}:`,
+        `Failed to destroy database for ${preview.previewId}:`,
         error
       );
       throw error;
@@ -354,19 +421,19 @@ export class PreviewService {
     for (const [serviceName, serviceConfig] of Object.entries(services)) {
       try {
         await this.logsService.createLog(
-          preview.prNumber,
+          preview.previewId,
           "deploy",
           `Deploying service: ${serviceName}`
         );
 
         // Generate container name
         const containerName = generateContainerName(
-          preview.prNumber,
+          preview.previewId,
           serviceName
         );
 
         // Generate image tag (in production, this would come from a registry)
-        const imageTag = `previewcloud/pr-${preview.prNumber}-${serviceName}:latest`;
+        const imageTag = `previewcloud/${preview.previewId}-${serviceName}:latest`;
 
         // Prepare environment variables
         const containerEnv = { ...env };
@@ -381,7 +448,7 @@ export class PreviewService {
 
         // Generate Traefik labels
         const labels = await this.traefikService.generateLabels(
-          preview.prNumber,
+          preview.previewId,
           preview.repoOwner,
           serviceName,
           serviceConfig.port || 8080,
@@ -405,7 +472,7 @@ export class PreviewService {
 
         // Generate service URL
         const url = this.traefikService.generateServiceUrl(
-          preview.prNumber,
+          preview.previewId,
           preview.repoOwner,
           serviceName
         );
@@ -422,7 +489,7 @@ export class PreviewService {
         preview.urls.set(serviceName, url);
 
         await this.logsService.createLog(
-          preview.prNumber,
+          preview.previewId,
           "deploy",
           `Service ${serviceName} deployed: ${url}`
         );
@@ -445,7 +512,7 @@ export class PreviewService {
         await this.dockerService.stopContainer(service.containerId);
         await this.dockerService.removeContainer(service.containerId);
         await this.logsService.createLog(
-          preview.prNumber,
+          preview.previewId,
           "deploy",
           `Service ${service.name} stopped`
         );
@@ -460,13 +527,15 @@ export class PreviewService {
    */
   private formatPreviewDetails(preview: IPreview): PreviewDetails {
     return {
+      previewType: preview.previewType,
       prNumber: preview.prNumber,
+      previewId: preview.previewId,
       repoName: preview.repoName,
       repoOwner: preview.repoOwner,
       branch: preview.branch,
       commitSha: preview.commitSha,
       status: preview.status,
-      services: preview.services.map(s => ({
+      services: preview.services.map((s) => ({
         name: s.name,
         containerId: s.containerId,
         imageTag: s.imageTag,

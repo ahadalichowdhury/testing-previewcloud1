@@ -5,7 +5,7 @@ export interface IDBProvisioner {
   /**
    * Create a new database for a preview environment
    */
-  createDatabase(prNumber: number): Promise<string>;
+  createDatabase(previewId: string, dbName: string): Promise<string>;
 
   /**
    * Run migrations on the database
@@ -18,15 +18,15 @@ export interface IDBProvisioner {
   /**
    * Destroy a database
    */
-  destroyDatabase(prNumber: number): Promise<void>;
+  destroyDatabase(previewId: string, dbName: string): Promise<void>;
 
   /**
    * Check if database exists
    */
-  databaseExists(prNumber: number): Promise<boolean>;
+  databaseExists(dbName: string): Promise<boolean>;
 
   /**
    * Get connection string for a preview database
    */
-  getConnectionString(prNumber: number): string;
+  getConnectionString(dbName: string): string;
 }

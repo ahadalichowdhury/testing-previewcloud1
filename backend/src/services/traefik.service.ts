@@ -8,15 +8,15 @@ export class TraefikService {
    * Generate Traefik labels for a container
    */
   async generateLabels(
-    prNumber: number,
+    previewId: string,
     repoOwner: string,
     serviceName: string,
     port: number,
     password?: string
   ): Promise<Record<string, string>> {
-    const routerName = `pr-${prNumber}-${serviceName}`;
+    const routerName = `${previewId}-${serviceName}`;
     const serviceDomain = generatePreviewUrl(
-      prNumber,
+      previewId,
       repoOwner,
       serviceName,
       config.baseDomain
@@ -36,7 +36,7 @@ export class TraefikService {
 
       // Metadata labels for tracking
       "previewcloud.managed": "true",
-      "previewcloud.pr": prNumber.toString(),
+      "previewcloud.previewId": previewId,
       "previewcloud.service": serviceName,
       "previewcloud.owner": repoOwner,
     };
@@ -70,12 +70,12 @@ export class TraefikService {
    * Generate URL for a service
    */
   generateServiceUrl(
-    prNumber: number,
+    previewId: string,
     repoOwner: string,
     serviceName: string
   ): string {
     const domain = generatePreviewUrl(
-      prNumber,
+      previewId,
       repoOwner,
       serviceName,
       config.baseDomain
@@ -87,10 +87,10 @@ export class TraefikService {
   /**
    * Get all preview-related labels for filtering
    */
-  getPreviewLabels(prNumber: number): Record<string, string> {
+  getPreviewLabels(previewId: string): Record<string, string> {
     return {
       "previewcloud.managed": "true",
-      "previewcloud.pr": prNumber.toString(),
+      "previewcloud.previewId": previewId,
     };
   }
 
