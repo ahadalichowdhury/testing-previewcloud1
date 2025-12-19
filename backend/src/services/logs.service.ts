@@ -25,7 +25,7 @@ export class LogsService {
 
       const log = await Log.create({
         previewId: preview._id,
-        prNumber: preview.prNumber, // Keep for backward compatibility
+        prNumber: preview.prNumber || undefined, // Optional: only for pull request previews
         type,
         message,
         metadata,

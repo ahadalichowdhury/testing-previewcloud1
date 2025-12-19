@@ -3,7 +3,7 @@ import { LogType } from "../types/preview.types";
 
 export interface ILog extends Document {
   previewId: mongoose.Types.ObjectId;
-  prNumber: number;
+  prNumber?: number; // Optional: only for pull request previews
   type: LogType;
   message: string;
   metadata?: Record<string, any>;
@@ -20,7 +20,7 @@ const LogSchema = new Schema<ILog>(
     },
     prNumber: {
       type: Number,
-      required: true,
+      required: false, // Optional: only for pull request previews
       index: true,
     },
     type: {
