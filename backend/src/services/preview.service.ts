@@ -65,13 +65,8 @@ export class PreviewService {
           ? `PR #${prNumber}`
           : `branch ${branch}`;
       logger.info(`Creating preview for ${previewLabel}`);
-      await this.logsService.createLog(
-        previewId,
-        "system",
-        `Starting preview creation for ${previewLabel}`
-      );
 
-      // Check if preview already exists
+      // Check if preview already exists FIRST (before creating logs)
       let preview = await Preview.findOne({ previewId });
       if (preview && preview.status !== PreviewStatus.DESTROYED) {
         logger.info(`Preview for ${previewLabel} already exists, updating...`);
@@ -94,6 +89,13 @@ export class PreviewService {
         env: previewConfig.env || {},
         password: previewConfig.password,
       });
+
+      // Now that preview exists, create initial log
+      await this.logsService.createLog(
+        previewId,
+        "system",
+        `Starting preview creation for ${previewLabel}`
+      );
 
       // Step 1: Provision database if needed
       if (database) {
@@ -152,16 +154,19 @@ export class PreviewService {
   ): Promise<IPreview> {
     try {
       logger.info(`Updating preview ${previewId}`);
+
+      // Find preview FIRST before creating logs
+      const preview = await Preview.findOne({ previewId });
+      if (!preview) {
+        throw new Error(`Preview ${previewId} not found`);
+      }
+
+      // Now create log since preview exists
       await this.logsService.createLog(
         previewId,
         "system",
         `Starting preview update`
       );
-
-      const preview = await Preview.findOne({ previewId });
-      if (!preview) {
-        throw new Error(`Preview ${previewId} not found`);
-      }
 
       preview.status = PreviewStatus.UPDATING;
       preview.commitSha = previewConfig.commitSha;

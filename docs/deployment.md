@@ -16,22 +16,22 @@ Complete guide for deploying PreviewCloud on your infrastructure.
 
 ### Minimum Requirements
 
-| Component | Specification |
-|-----------|--------------|
-| **OS** | Ubuntu 20.04+, Debian 11+, Amazon Linux 2 |
-| **CPU** | 2 cores |
-| **RAM** | 4 GB |
-| **Disk** | 40 GB SSD |
-| **Network** | 100 Mbps, Public IP |
+| Component   | Specification                             |
+| ----------- | ----------------------------------------- |
+| **OS**      | Ubuntu 20.04+, Debian 11+, Amazon Linux 2 |
+| **CPU**     | 2 cores                                   |
+| **RAM**     | 4 GB                                      |
+| **Disk**    | 40 GB SSD                                 |
+| **Network** | 100 Mbps, Public IP                       |
 
 ### Recommended Requirements
 
-| Component | Specification |
-|-----------|--------------|
-| **OS** | Ubuntu 22.04 LTS |
-| **CPU** | 4+ cores |
-| **RAM** | 8+ GB |
-| **Disk** | 100+ GB SSD |
+| Component   | Specification                   |
+| ----------- | ------------------------------- |
+| **OS**      | Ubuntu 22.04 LTS                |
+| **CPU**     | 4+ cores                        |
+| **RAM**     | 8+ GB                           |
+| **Disk**    | 100+ GB SSD                     |
 | **Network** | 1 Gbps, Public IP, IPv6 support |
 
 ### Cloud Provider Recommendations
@@ -39,40 +39,45 @@ Complete guide for deploying PreviewCloud on your infrastructure.
 #### AWS EC2
 
 **Recommended Instance Types:**
+
 - **Minimum**: t3.medium (2 vCPU, 4 GB RAM)
 - **Recommended**: t3.large (2 vCPU, 8 GB RAM)
 - **Production**: t3.xlarge (4 vCPU, 16 GB RAM)
 
 **Storage:**
+
 - gp3 EBS volumes
 - Minimum 40 GB, recommended 100+ GB
 
 #### DigitalOcean Droplets
 
 **Recommended Plans:**
+
 - **Minimum**: Basic (2 vCPU, 4 GB RAM)
 - **Recommended**: General Purpose (4 vCPU, 8 GB RAM)
 
 #### Linode
 
 **Recommended Plans:**
+
 - **Minimum**: Linode 4GB
 - **Recommended**: Linode 8GB
 
 #### Hetzner
 
 **Recommended Plans:**
+
 - **Minimum**: CX21 (2 vCPU, 4 GB RAM)
 - **Recommended**: CX31 (2 vCPU, 8 GB RAM)
 
 ### Network Ports
 
-| Port | Protocol | Purpose | Public |
-|------|----------|---------|--------|
-| 22 | TCP | SSH | Yes |
-| 80 | TCP | HTTP (redirects to HTTPS) | Yes |
-| 443 | TCP | HTTPS | Yes |
-| 8080 | TCP | Traefik Dashboard (optional) | No |
+| Port | Protocol | Purpose                      | Public |
+| ---- | -------- | ---------------------------- | ------ |
+| 22   | TCP      | SSH                          | Yes    |
+| 80   | TCP      | HTTP (redirects to HTTPS)    | Yes    |
+| 443  | TCP      | HTTPS                        | Yes    |
+| 8080 | TCP      | Traefik Dashboard (optional) | No     |
 
 ## Pre-Deployment Checklist
 
@@ -88,8 +93,9 @@ Complete guide for deploying PreviewCloud on your infrastructure.
 ### 2. Server Access
 
 - [ ] SSH access to server
-- [ ] Root or sudo privileges
+- [ ] Root or sudo privileges (for initial setup only)
 - [ ] Server is updated: `sudo apt update && sudo apt upgrade`
+- [ ] Ubuntu user will be configured to run commands without sudo
 
 ### 3. Firewall Rules
 
@@ -100,9 +106,31 @@ Complete guide for deploying PreviewCloud on your infrastructure.
 
 - [ ] Valid email for Let's Encrypt notifications
 
+## Initial Setup (One-Time, Requires Sudo)
+
+Before you can run commands without sudo, you need to complete the initial setup:
+
+```bash
+# 1. Add ubuntu user to docker group
+sudo usermod -aG docker ubuntu
+
+# 2. Set ownership of previewcloud directory
+sudo chown -R ubuntu:ubuntu /opt/previewcloud
+
+# 3. Log out and log back in (or run: newgrp docker)
+# This applies the docker group membership
+
+# 4. Verify you can run docker without sudo
+docker ps
+```
+
+**Note:** After this initial setup, all commands in this guide can be run without `sudo` by the `ubuntu` user. Commands that still require `sudo` are clearly marked.
+
 ## Installation Methods
 
 ### Method 1: Quick Install (Recommended)
+
+**Initial Setup (requires sudo):**
 
 ```bash
 # Download and run installer
@@ -114,7 +142,29 @@ chmod +x install.sh
 sudo ./install.sh
 ```
 
+**Configure Ubuntu User (run once after installation):**
+
+```bash
+# Add ubuntu user to docker group (no sudo needed after this)
+sudo usermod -aG docker ubuntu
+
+# Set ownership of previewcloud directory
+sudo chown -R ubuntu:ubuntu /opt/previewcloud
+
+# Log out and log back in for group changes to take effect
+# Or run: newgrp docker
+```
+
+**After setup, all commands can be run without sudo:**
+
+```bash
+cd /opt/previewcloud
+docker compose -f infra/docker-compose.yml up -d
+docker logs -f previewcloud-api
+```
+
 The installer will:
+
 1. Install Docker and Docker Compose
 2. Install Node.js 20
 3. Create directory structure
@@ -125,7 +175,7 @@ The installer will:
 
 ### Method 2: Manual Installation
 
-#### Step 1: Install Docker
+#### Step 1: Install Docker (requires sudo)
 
 ```bash
 # Ubuntu/Debian
@@ -142,37 +192,43 @@ echo \
 
 sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Add ubuntu user to docker group (allows running docker without sudo)
+sudo usermod -aG docker ubuntu
 ```
 
-#### Step 2: Install Docker Compose
+**Important:** Log out and log back in (or run `newgrp docker`) for group changes to take effect.
+
+#### Step 2: Install Docker Compose (requires sudo)
 
 ```bash
 sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
-#### Step 3: Install Node.js
+#### Step 3: Install Node.js (requires sudo)
 
 ```bash
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
 sudo apt install -y nodejs
 ```
 
-#### Step 4: Create Directories
+#### Step 4: Create Directories (requires sudo)
 
 ```bash
 sudo mkdir -p /opt/previewcloud
 sudo mkdir -p /etc/previewcloud
+sudo chown -R ubuntu:ubuntu /opt/previewcloud
 ```
 
-#### Step 5: Clone Repository
+#### Step 5: Clone Repository (no sudo needed)
 
 ```bash
 cd /opt/previewcloud
-sudo git clone https://github.com/yourusername/previewcloud.git .
+git clone https://github.com/yourusername/previewcloud.git .
 ```
 
-#### Step 6: Configure Environment
+#### Step 6: Configure Environment (requires sudo for /etc)
 
 ```bash
 # Generate secrets
@@ -180,8 +236,9 @@ JWT_SECRET=$(openssl rand -hex 32)
 API_TOKEN_SECRET=$(openssl rand -hex 32)
 GITHUB_WEBHOOK_SECRET=$(openssl rand -hex 32)
 
-# Create .env file
-sudo tee /etc/previewcloud/.env <<EOF
+# Create .env file in project directory (no sudo needed)
+cd /opt/previewcloud/backend
+cat > .env <<EOF
 BASE_DOMAIN=preview.previewcloud.cloud
 API_DOMAIN=api.previewcloud.cloud
 TRAEFIK_DOMAIN=traefik.preview.previewcloud.cloud
@@ -196,17 +253,17 @@ MONGODB_PASSWORD=$(openssl rand -hex 16)
 EOF
 ```
 
-#### Step 7: Create Docker Network
+#### Step 7: Create Docker Network (no sudo needed after docker group setup)
 
 ```bash
-sudo docker network create traefik-proxy
+docker network create traefik-proxy
 ```
 
-#### Step 8: Start Services
+#### Step 8: Start Services (no sudo needed)
 
 ```bash
 cd /opt/previewcloud
-sudo docker-compose -f infra/docker-compose.yml up -d
+docker compose -f infra/docker-compose.yml up -d
 ```
 
 ## DNS Configuration
@@ -297,6 +354,7 @@ PreviewCloud uses Traefik with Let's Encrypt for automatic SSL.
 ### Automatic SSL Setup
 
 SSL is configured automatically by the installer. Traefik will:
+
 1. Request certificates from Let's Encrypt
 2. Store certificates in `/opt/previewcloud/traefik-certs/acme.json`
 3. Automatically renew certificates before expiry
@@ -305,10 +363,10 @@ SSL is configured automatically by the installer. Traefik will:
 
 ```bash
 # Check certificate
-sudo docker exec traefik cat /letsencrypt/acme.json | jq
+docker exec traefik cat /letsencrypt/acme.json | jq
 
 # View Traefik logs
-sudo docker logs traefik
+docker logs traefik
 
 # Test HTTPS
 curl -I https://api.previewcloud.cloud/api/health
@@ -319,25 +377,27 @@ curl -I https://api.previewcloud.cloud/api/health
 #### Certificate not issued
 
 **Causes:**
+
 - DNS not propagated
 - Port 80/443 not accessible
 - Rate limit exceeded
 
 **Solutions:**
+
 ```bash
 # Check DNS
 dig api.previewcloud.cloud
 
 # Check port accessibility
-sudo netstat -tulpn | grep :80
-sudo netstat -tulpn | grep :443
+netstat -tulpn | grep :80
+netstat -tulpn | grep :443
 
 # Check Traefik logs
-sudo docker logs traefik --tail 100
+docker logs traefik --tail 100
 
 # Remove and retry
-sudo rm -f /opt/previewcloud/traefik-certs/acme.json
-sudo docker restart traefik
+rm -f /opt/previewcloud/infra/traefik-certs/acme.json
+docker restart traefik
 ```
 
 #### Let's Encrypt rate limits
@@ -360,17 +420,18 @@ certificatesResolvers:
 ### 1. Verify Installation
 
 ```bash
-# Check services status
-sudo systemctl status previewcloud
-
 # Check running containers
-sudo docker ps
+docker ps
 
 # Check API health
 curl https://api.previewcloud.cloud/api/health
+
+# Check all services
+docker compose -f infra/docker-compose.yml ps
 ```
 
 Expected output:
+
 ```json
 {
   "status": "healthy",
@@ -415,7 +476,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Deploy to PreviewCloud
         uses: previewcloud/deploy@v1
         with:
@@ -442,22 +503,25 @@ Add `PREVIEWCLOUD_API_TOKEN` to repository secrets.
 ```bash
 # Update PreviewCloud
 cd /opt/previewcloud
-sudo git pull
-sudo docker-compose -f infra/docker-compose.yml pull
-sudo systemctl restart previewcloud
+git pull
+docker compose -f infra/docker-compose.yml pull
+docker compose -f infra/docker-compose.yml up -d --build
 ```
 
 ### Monitoring
 
 ```bash
-# View logs
-sudo journalctl -u previewcloud -f
+# View backend logs
+docker logs -f previewcloud-api
+
+# View all service logs
+docker compose -f infra/docker-compose.yml logs -f
 
 # Check disk usage
 df -h
 
 # Check Docker stats
-sudo docker stats
+docker stats
 
 # Check preview count
 curl https://api.previewcloud.cloud/api/previews | jq '.count'
@@ -467,18 +531,18 @@ curl https://api.previewcloud.cloud/api/previews | jq '.count'
 
 ```bash
 # Backup MongoDB
-sudo docker exec previewcloud-mongodb mongodump --out=/backup
-sudo docker cp previewcloud-mongodb:/backup ./backup-$(date +%Y%m%d)
+docker exec mongodb-platform mongodump --out=/backup
+docker cp mongodb-platform:/backup ./backup-$(date +%Y%m%d)
 
 # Backup configuration
-sudo cp -r /etc/previewcloud ./config-backup-$(date +%Y%m%d)
+cp -r backend/.env ./config-backup-$(date +%Y%m%d)
 ```
 
 ### Cleanup
 
 ```bash
-# Manual cleanup
-sudo docker system prune -a --volumes
+# Manual cleanup (be careful!)
+docker system prune -a --volumes
 
 # Remove specific preview
 curl -X DELETE https://api.previewcloud.cloud/api/previews/123 \
@@ -501,4 +565,3 @@ curl -X DELETE https://api.previewcloud.cloud/api/previews/123 \
 ## Troubleshooting
 
 See [Troubleshooting Guide](troubleshooting.md) for common issues and solutions.
-

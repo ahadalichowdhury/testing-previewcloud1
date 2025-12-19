@@ -179,6 +179,16 @@ async function run(): Promise<void> {
     }, null, 2)}`);
 
     core.info("🔨 Deploying preview environment...");
+    
+    // Debug: Log payload structure (without sensitive data)
+    core.debug(`Payload preview: ${JSON.stringify({
+      previewType: payload.previewType,
+      repoOwner: payload.repoOwner,
+      repoName: payload.repoName,
+      branch: payload.branch,
+      servicesCount: Object.keys(payload.services || {}).length,
+      hasDatabase: !!payload.database,
+    }, null, 2)}`);
 
     // Deploy preview
     const startTime = Date.now();
@@ -226,8 +236,26 @@ async function run(): Promise<void> {
       core.warning("GITHUB_TOKEN not available. Skipping PR comment.");
     }
   } catch (error: any) {
+    // Log full error details
+    core.error(`\n=== Action Failed ===`);
+    core.error(`Error Message: ${error.message}`);
+    
+    // If it's an axios error with response, log it again for visibility
+    if (error.response) {
+      core.error(`\nBackend Response Details:`);
+      core.error(`Status: ${error.response.status}`);
+      core.error(`Data: ${JSON.stringify(error.response.data, null, 2)}`);
+    }
+    
+    if (error.stack) {
+      core.error(`\nStack Trace:`);
+      core.error(error.stack);
+    }
+    
+    core.error(`=====================\n`);
+    
+    // Set failed with the error message
     core.setFailed(`Action failed: ${error.message}`);
-    core.error(error.stack || error.toString());
   }
 }
 
@@ -271,30 +299,47 @@ async function deployPreview(
       const status = error.response.status;
       const errorData = error.response.data;
       
-      // Log full error response for debugging
-      core.error(`=== Backend Error Response (${status}) ===`);
-      core.error(`Status: ${status}`);
-      core.error(`Headers: ${JSON.stringify(error.response.headers, null, 2)}`);
-      core.error(`Data: ${JSON.stringify(errorData, null, 2)}`);
-      core.error(`=========================================`);
+      // Always log full error response for debugging (even if it's verbose)
+      core.error(`\n=== Backend Error Response (${status}) ===`);
+      core.error(`Status Code: ${status}`);
+      core.error(`Error Data: ${JSON.stringify(errorData, null, 2)}`);
+      if (error.response.headers) {
+        core.error(`Response Headers: ${JSON.stringify(error.response.headers, null, 2)}`);
+      }
+      core.error(`=========================================\n`);
       
       // Extract error message from various possible structures
-      const errorMessage = 
-        errorData?.error?.message || 
-        errorData?.message || 
-        errorData?.error || 
-        error.message || 
-        `Request failed with status code ${status}`;
+      let errorMessage = `Request failed with status code ${status}`;
       
-      throw new Error(`${errorMessage} (Status: ${status})`);
+      if (errorData) {
+        if (errorData.error?.message) {
+          errorMessage = errorData.error.message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (typeof errorData.error === 'string') {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      }
+      
+      // Include full error data in the message for debugging
+      const fullError = `${errorMessage} (Status: ${status})\n\nFull error response:\n${JSON.stringify(errorData, null, 2)}`;
+      throw new Error(fullError);
     } else if (error.request) {
       // Request made but no response
-      core.error(`No response received from server`);
-      core.error(`Request config: ${JSON.stringify(error.config, null, 2)}`);
+      core.error(`\n=== No Response from Server ===`);
+      core.error(`Request URL: ${error.config?.url}`);
+      core.error(`Request Method: ${error.config?.method}`);
+      core.error(`Request Headers: ${JSON.stringify(error.config?.headers, null, 2)}`);
+      core.error(`================================\n`);
       throw new Error(`No response from server: ${error.message}`);
     } else {
       // Error setting up request
-      core.error(`Request setup error: ${error.message}`);
+      core.error(`\n=== Request Setup Error ===`);
+      core.error(`Error: ${error.message}`);
+      core.error(`Stack: ${error.stack}`);
+      core.error(`=======================\n`);
       throw new Error(`Request setup error: ${error.message}`);
     }
   }
