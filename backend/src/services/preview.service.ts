@@ -15,20 +15,26 @@ import {
   generatePreviewId,
 } from "../utils/helpers";
 import { logger } from "../utils/logger";
+import { BuildService } from "./build.service";
 import { DBProvisionerFactory } from "./database/factory";
 import { DockerService } from "./docker.service";
 import { LogsService } from "./logs.service";
+import { RepositoryService } from "./repository.service";
 import { TraefikService } from "./traefik.service";
 
 export class PreviewService {
   private dockerService: DockerService;
   private traefikService: TraefikService;
   private logsService: LogsService;
+  private buildService: BuildService;
+  private repositoryService: RepositoryService;
 
   constructor() {
     this.dockerService = new DockerService();
     this.traefikService = new TraefikService();
     this.logsService = new LogsService();
+    this.buildService = new BuildService();
+    this.repositoryService = new RepositoryService();
   }
 
   /**
@@ -102,16 +108,40 @@ export class PreviewService {
         await this.provisionDatabase(preview, database);
       }
 
-      // Step 2: Build images (this would normally pull from a registry or build locally)
-      // For now, we assume images are pre-built or passed in
+      // Step 2: Clone repository
+      await this.logsService.createLog(
+        previewId,
+        "system",
+        `Cloning repository: ${repoOwner}/${repoName} (${branch})`
+      );
+
+      const repoPath = await this.repositoryService.cloneOrUpdate(
+        repoOwner,
+        repoName,
+        branch,
+        previewConfig.commitSha
+      );
+
+      // Step 3: Build Docker images
       await this.logsService.createLog(
         previewId,
         "build",
         "Starting service builds..."
       );
 
-      // Step 3: Deploy services
-      await this.deployServices(preview, services, previewConfig.env || {});
+      const imageTags = await this.buildService.buildAllServices(
+        previewId,
+        services,
+        repoPath
+      );
+
+      // Step 4: Deploy services with built images
+      await this.deployServices(
+        preview,
+        services,
+        previewConfig.env || {},
+        imageTags
+      );
 
       // Step 4: Update preview status
       preview.status = PreviewStatus.RUNNING;
@@ -175,11 +205,39 @@ export class PreviewService {
       // Stop and remove existing containers
       await this.stopServices(preview);
 
-      // Redeploy services
+      // Clone/update repository
+      await this.logsService.createLog(
+        previewId,
+        "system",
+        `Updating repository: ${preview.repoOwner}/${preview.repoName} (${preview.branch})`
+      );
+
+      const repoPath = await this.repositoryService.cloneOrUpdate(
+        preview.repoOwner,
+        preview.repoName,
+        preview.branch,
+        previewConfig.commitSha
+      );
+
+      // Build Docker images
+      await this.logsService.createLog(
+        previewId,
+        "build",
+        "Rebuilding service images..."
+      );
+
+      const imageTags = await this.buildService.buildAllServices(
+        previewId,
+        previewConfig.services,
+        repoPath
+      );
+
+      // Redeploy services with new images
       await this.deployServices(
         preview,
         previewConfig.services,
-        previewConfig.env || {}
+        previewConfig.env || {},
+        imageTags
       );
 
       preview.status = PreviewStatus.RUNNING;
@@ -424,7 +482,8 @@ export class PreviewService {
   private async deployServices(
     preview: IPreview,
     services: Record<string, any>,
-    env: Record<string, string>
+    env: Record<string, string>,
+    imageTags: Record<string, string>
   ): Promise<void> {
     const serviceList = [];
 
@@ -442,8 +501,13 @@ export class PreviewService {
           serviceName
         );
 
-        // Generate image tag (in production, this would come from a registry)
-        const imageTag = `previewcloud/${preview.previewId}-${serviceName}:latest`;
+        // Use the built image tag
+        const imageTag = imageTags[serviceName];
+        if (!imageTag) {
+          throw new Error(
+            `Image tag not found for service ${serviceName}. Build may have failed.`
+          );
+        }
 
         // Prepare environment variables
         const containerEnv = { ...env };
