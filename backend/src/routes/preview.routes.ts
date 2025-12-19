@@ -77,6 +77,33 @@ router.get("/", asyncHandler(previewController.listPreviews));
 
 /**
  * @swagger
+ * /api/previews/{previewId}/status:
+ *   get:
+ *     summary: Get preview status
+ *     tags: [Previews]
+ *     security:
+ *       - ApiKeyAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: previewId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Preview ID (pr-{number} or branch-{name})
+ *     responses:
+ *       200:
+ *         description: Preview status
+ *       404:
+ *         description: Preview not found
+ */
+router.get(
+  "/:previewId/status",
+  verifyApiToken,
+  asyncHandler(previewController.getPreviewStatus)
+);
+
+/**
+ * @swagger
  * /api/previews/{prNumber}:
  *   get:
  *     summary: Get preview environment details

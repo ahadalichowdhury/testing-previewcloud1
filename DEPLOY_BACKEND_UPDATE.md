@@ -33,10 +33,10 @@ docker logs -f previewcloud-backend
 ## Verify It's Working:
 
 After deploying, the backend should:
+
 1. ✅ Receive image tags from GitHub Action
 2. ✅ Pull images from registry
 3. ✅ Create containers
 4. ✅ **NOT** try to clone repositories
 
 The error "git: not found" should be gone!
-

@@ -298,6 +298,38 @@ export async function listPreviews(req: Request, res: Response): Promise<void> {
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+/**
+ * Get preview status (for polling)
+ */
+export async function getPreviewStatus(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const previewId = req.params.previewId;
+    const preview = await previewService.getPreview(previewId);
+
+    if (!preview) {
+      throw new AppError("Preview not found", 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        previewId: preview.previewId,
+        status: preview.status,
+        urls:
+          preview.urls instanceof Map
+            ? Object.fromEntries(preview.urls)
+            : preview.urls,
+      },
+    });
+  } catch (error) {
+    logger.error("Failed to get preview status:", error);
+    throw error;
+  }
+}
+
 export async function destroyPreview(
   req: Request,
   res: Response
