@@ -63,6 +63,21 @@ inputs:
     description: 'Deployment timeout in seconds (default: 600)'
     required: false
     default: '600'
+  
+  registry:
+    description: 'Docker registry URL (e.g., docker.io, ghcr.io, or your private registry). If not provided, images are built but not pushed.'
+    required: false
+    default: ''
+  
+  registry-username:
+    description: 'Registry username (for authentication)'
+    required: false
+    default: ''
+  
+  registry-password:
+    description: 'Registry password or token (use GitHub secrets)'
+    required: false
+    default: ''
 
 outputs:
   preview-id:

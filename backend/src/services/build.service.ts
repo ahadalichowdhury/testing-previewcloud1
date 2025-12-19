@@ -23,6 +23,9 @@ export class BuildService {
     serviceConfig: ServiceConfig,
     repoPath: string
   ): Promise<string> {
+    if (!serviceConfig.dockerfile) {
+      throw new Error(`Service ${serviceName} must have a dockerfile to build`);
+    }
     const imageTag = this.generateImageTag(previewId, serviceName);
     const dockerfilePath = path.join(repoPath, serviceConfig.dockerfile);
     const contextPath = serviceConfig.context

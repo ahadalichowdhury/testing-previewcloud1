@@ -34,7 +34,8 @@ export enum DatabaseType {
 }
 
 export interface ServiceConfig {
-  dockerfile: string;
+  dockerfile?: string; // Optional: if not provided, imageTag must be provided
+  imageTag?: string; // Optional: pre-built image tag (registry format: registry/image:tag)
   port?: number;
   env?: Record<string, string>;
   context?: string;

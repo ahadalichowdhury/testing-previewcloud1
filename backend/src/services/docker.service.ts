@@ -16,6 +16,61 @@ export class DockerService {
   }
 
   /**
+   * Pull a Docker image from a registry
+   */
+  async pullImage(
+    imageTag: string,
+    onProgress?: (message: string) => void
+  ): Promise<void> {
+    try {
+      logger.info(`Pulling image: ${imageTag}`);
+
+      return new Promise<void>((resolve, reject) => {
+        this.docker.pull(
+          imageTag,
+          (err: Error | null, stream: NodeJS.ReadableStream | null) => {
+            if (err) {
+              logger.error(`Failed to pull image ${imageTag}:`, err);
+              reject(err);
+              return;
+            }
+
+            if (!stream) {
+              reject(new Error("No stream returned from docker pull"));
+              return;
+            }
+
+            this.docker.modem.followProgress(
+              stream,
+              (err: Error | null, _output: any[]) => {
+                if (err) {
+                  logger.error(`Pull failed for ${imageTag}:`, err);
+                  reject(err);
+                } else {
+                  logger.info(`Successfully pulled image: ${imageTag}`);
+                  resolve();
+                }
+              },
+              (event: any) => {
+                if (event.status) {
+                  const message = `${event.status}${
+                    event.id ? ` ${event.id}` : ""
+                  }${event.progress ? ` ${event.progress}` : ""}`;
+                  logger.debug(`Pull: ${message}`);
+                  onProgress?.(message);
+                }
+              }
+            );
+          }
+        );
+      });
+    } catch (error) {
+      logger.error("Docker pull failed:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Build a Docker image from a Dockerfile
    */
   async buildImage(

@@ -15,26 +15,20 @@ import {
   generatePreviewId,
 } from "../utils/helpers";
 import { logger } from "../utils/logger";
-import { BuildService } from "./build.service";
 import { DBProvisionerFactory } from "./database/factory";
 import { DockerService } from "./docker.service";
 import { LogsService } from "./logs.service";
-import { RepositoryService } from "./repository.service";
 import { TraefikService } from "./traefik.service";
 
 export class PreviewService {
   private dockerService: DockerService;
   private traefikService: TraefikService;
   private logsService: LogsService;
-  private buildService: BuildService;
-  private repositoryService: RepositoryService;
 
   constructor() {
     this.dockerService = new DockerService();
     this.traefikService = new TraefikService();
     this.logsService = new LogsService();
-    this.buildService = new BuildService();
-    this.repositoryService = new RepositoryService();
   }
 
   /**
@@ -108,34 +102,33 @@ export class PreviewService {
         await this.provisionDatabase(preview, database);
       }
 
-      // Step 2: Clone repository
+      // Step 2: Pull Docker images (built by GitHub Action)
       await this.logsService.createLog(
         previewId,
         "system",
-        `Cloning repository: ${repoOwner}/${repoName} (${branch})`
+        "Pulling Docker images from registry..."
       );
 
-      const repoPath = await this.repositoryService.cloneOrUpdate(
-        repoOwner,
-        repoName,
-        branch,
-        previewConfig.commitSha
-      );
+      // Extract image tags from service configs
+      const imageTags: Record<string, string> = {};
+      for (const [serviceName, serviceConfig] of Object.entries(services)) {
+        if (serviceConfig.imageTag) {
+          imageTags[serviceName] = serviceConfig.imageTag;
+          // Pull image from registry
+          await this.logsService.createLog(
+            previewId,
+            "build",
+            `Pulling image: ${serviceConfig.imageTag}`
+          );
+          await this.dockerService.pullImage(serviceConfig.imageTag);
+        } else {
+          throw new Error(
+            `Service ${serviceName} must have imageTag. Images should be built by GitHub Action.`
+          );
+        }
+      }
 
-      // Step 3: Build Docker images
-      await this.logsService.createLog(
-        previewId,
-        "build",
-        "Starting service builds..."
-      );
-
-      const imageTags = await this.buildService.buildAllServices(
-        previewId,
-        services,
-        repoPath
-      );
-
-      // Step 4: Deploy services with built images
+      // Step 3: Deploy services with pulled images
       await this.deployServices(
         preview,
         services,
@@ -205,32 +198,33 @@ export class PreviewService {
       // Stop and remove existing containers
       await this.stopServices(preview);
 
-      // Clone/update repository
+      // Pull Docker images (built by GitHub Action)
       await this.logsService.createLog(
         previewId,
         "system",
-        `Updating repository: ${preview.repoOwner}/${preview.repoName} (${preview.branch})`
+        "Pulling updated Docker images from registry..."
       );
 
-      const repoPath = await this.repositoryService.cloneOrUpdate(
-        preview.repoOwner,
-        preview.repoName,
-        preview.branch,
-        previewConfig.commitSha
-      );
-
-      // Build Docker images
-      await this.logsService.createLog(
-        previewId,
-        "build",
-        "Rebuilding service images..."
-      );
-
-      const imageTags = await this.buildService.buildAllServices(
-        previewId,
-        previewConfig.services,
-        repoPath
-      );
+      // Extract image tags from service configs
+      const imageTags: Record<string, string> = {};
+      for (const [serviceName, serviceConfig] of Object.entries(
+        previewConfig.services
+      )) {
+        if (serviceConfig.imageTag) {
+          imageTags[serviceName] = serviceConfig.imageTag;
+          // Pull image from registry
+          await this.logsService.createLog(
+            previewId,
+            "build",
+            `Pulling image: ${serviceConfig.imageTag}`
+          );
+          await this.dockerService.pullImage(serviceConfig.imageTag);
+        } else {
+          throw new Error(
+            `Service ${serviceName} must have imageTag. Images should be built by GitHub Action.`
+          );
+        }
+      }
 
       // Redeploy services with new images
       await this.deployServices(
