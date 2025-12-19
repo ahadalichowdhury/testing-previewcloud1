@@ -490,7 +490,10 @@ export class PreviewService {
 
       // Replace ${DATABASE_URL}
       if (databaseUrl && resolvedValue.includes("${DATABASE_URL}")) {
-        resolvedValue = resolvedValue.replace(/\$\{DATABASE_URL\}/g, databaseUrl);
+        resolvedValue = resolvedValue.replace(
+          /\$\{DATABASE_URL\}/g,
+          databaseUrl
+        );
       }
 
       // Replace ${SERVICE_NAME_URL} patterns (e.g., ${API_URL}, ${FRONTEND_URL})
