@@ -471,6 +471,46 @@ export class PreviewService {
   }
 
   /**
+   * Resolve magic variables like ${API_URL} to actual service URLs
+   */
+  private resolveEnvVariables(
+    env: Record<string, string>,
+    serviceUrls: Record<string, string>,
+    databaseUrl?: string
+  ): Record<string, string> {
+    const resolved: Record<string, string> = {};
+
+    for (const [key, value] of Object.entries(env)) {
+      if (typeof value !== "string") {
+        resolved[key] = value;
+        continue;
+      }
+
+      let resolvedValue = value;
+
+      // Replace ${DATABASE_URL}
+      if (databaseUrl && resolvedValue.includes("${DATABASE_URL}")) {
+        resolvedValue = resolvedValue.replace(/\$\{DATABASE_URL\}/g, databaseUrl);
+      }
+
+      // Replace ${SERVICE_NAME_URL} patterns (e.g., ${API_URL}, ${FRONTEND_URL})
+      for (const [serviceName, serviceUrl] of Object.entries(serviceUrls)) {
+        const magicVar = `\${${serviceName.toUpperCase()}_URL}`;
+        if (resolvedValue.includes(magicVar)) {
+          resolvedValue = resolvedValue.replace(
+            new RegExp(`\\$\\{${serviceName.toUpperCase()}_URL\\}`, "g"),
+            serviceUrl
+          );
+        }
+      }
+
+      resolved[key] = resolvedValue;
+    }
+
+    return resolved;
+  }
+
+  /**
    * Deploy all services
    */
   private async deployServices(
@@ -480,6 +520,16 @@ export class PreviewService {
     imageTags: Record<string, string>
   ): Promise<void> {
     const serviceList = [];
+
+    // First, generate all service URLs so we can resolve magic variables
+    const serviceUrls: Record<string, string> = {};
+    for (const serviceName of Object.keys(services)) {
+      serviceUrls[serviceName] = this.traefikService.generateServiceUrl(
+        preview.previewId,
+        preview.repoOwner,
+        serviceName
+      );
+    }
 
     for (const [serviceName, serviceConfig] of Object.entries(services)) {
       try {
@@ -504,7 +554,7 @@ export class PreviewService {
         }
 
         // Prepare environment variables
-        const containerEnv = { ...env };
+        let containerEnv = { ...env };
         if (preview.database) {
           containerEnv.DATABASE_URL = preview.database.connectionString;
         }
@@ -513,6 +563,13 @@ export class PreviewService {
         if (serviceConfig.env) {
           Object.assign(containerEnv, serviceConfig.env);
         }
+
+        // Resolve magic variables (${API_URL}, ${FRONTEND_URL}, etc.) to actual URLs
+        containerEnv = this.resolveEnvVariables(
+          containerEnv,
+          serviceUrls,
+          preview.database?.connectionString
+        );
 
         // Generate Traefik labels
         const labels = await this.traefikService.generateLabels(
